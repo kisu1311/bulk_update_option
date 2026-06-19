@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bulk Update – Design Options | ObserveOps</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07101f;--nav:#0c1a2e;--panel:#0e2036;--card:#11223a;--card2:#0f1e33;
+  --border:#18304a;--border2:#1e3a56;--text:#c2d4e8;--muted:#5272a0;--dim:#2c4460;
+  --teal:#14b8a6;--teal-glow:rgba(20,184,166,.16);--teal2:rgba(20,184,166,.12);
+  --red:#e05050;--orange:#f47c22;--yellow:#f5c400;--green:#2cc76a;--blue:#008cff;--purple:#8c5bd8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:'Inter',sans-serif;font-size:13px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 24px 64px}
+
+/* header */
+.head{display:flex;align-items:center;gap:13px;margin-bottom:6px}
+.logo-box{width:34px;height:34px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#07101f;flex-shrink:0}
+.brand{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.brand span{color:var(--muted);font-weight:500}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin:22px 0 8px}
+.sub{font-size:13.5px;color:var(--muted);max-width:620px;line-height:1.6}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:34px}
+.card{display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 18px 16px;transition:border-color .15s,transform .15s,background .15s}
+.card:hover{border-color:var(--teal);background:var(--card2);transform:translateY(-2px)}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tag{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--teal2);color:var(--teal);border:1px solid rgba(20,184,166,.3)}
+.card h2{font-size:15.5px;font-weight:700;letter-spacing:-.2px}
+.card p{font-size:12.5px;color:var(--muted);line-height:1.55;flex:1}
+.go{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--teal);margin-top:2px}
+.go svg{width:14px;height:14px;transition:transform .15s}
+.card:hover .go svg{transform:translateX(3px)}
+.foot{margin-top:44px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--dim)}
+.foot a{color:var(--muted);border-bottom:1px solid transparent}
+.foot a:hover{color:var(--teal);border-color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="logo-box">O</div>
+    <div class="brand">ObserveOps <span>· Design Prototypes</span></div>
+  </div>
+
+  <h1>Bulk Update — Design Options</h1>
+  <p class="sub">Interactive UI explorations for the Monitors bulk-update workflow. Each card opens a self-contained, clickable prototype. Pick any option to review.</p>
+
+  <div class="grid">
+    <a class="card" href="bulk_up_op1.html">
+      <div class="card-top"><span class="tag">Option 1</span></div>
+      <h2>Stepper</h2>
+      <p>Guided, multi-step wizard that walks through the bulk-update flow stage by stage.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="bulk_update.html">
+      <div class="card-top"><span class="tag">Option 2</span></div>
+      <h2>Approval</h2>
+      <p>Review-and-approve layout: stage changes, then confirm before they are applied.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="newbulk.html">
+      <div class="card-top"><span class="tag">Option 3</span></div>
+      <h2>Approval — Grouped</h2>
+      <p>Approval flow with changes grouped together for quicker scanning and sign-off.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="newbulk2.html">
+      <div class="card-top"><span class="tag">Option 4</span></div>
+      <h2>Type View</h2>
+      <p>Organizes targets by device/monitor type so updates can be applied per type.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="bulk_update_op-2.html">
+      <div class="card-top"><span class="tag">Option 5</span></div>
+      <h2>Variant 2</h2>
+      <p>Alternate composition of the bulk-update surface for comparison.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="bulk_update_op-3.html">
+      <div class="card-top"><span class="tag">Option 6</span></div>
+      <h2>Variant 3</h2>
+      <p>Third layout iteration refining density and the action placement.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="bulk_update_op-4.html">
+      <div class="card-top"><span class="tag">Option 7</span></div>
+      <h2>AI Triage</h2>
+      <p>Bulk update augmented with an AI triage panel to suggest and prioritize changes.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <a class="card" href="bulk_update_op-5.html">
+      <div class="card-top"><span class="tag">Option 8</span></div>
+      <h2>Variant 5</h2>
+      <p>Latest layout iteration in the bulk-update exploration series.</p>
+      <span class="go">Open prototype <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+  </div>
+
+  <div class="foot">ObserveOps prototype · <a href="https://github.com/kisu1311/bulk_update_option">github.com/kisu1311/bulk_update_option</a></div>
+</div>
+</body>
+</html>
