@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bulk Update – Approval (Grouped) | ObserveOps</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══ TOKENS ══════════════════════════════════════════════════ */
+:root{
+  --bg:     #07101f;
+  --nav:    #0c1a2e;
+  --panel:  #0e2036;
+  --card:   #11223a;
+  --border: #18304a;
+  --border2:#1e3a56;
+  --text:   #c2d4e8;
+  --muted:  #5272a0;
+  --dim:    #2c4460;
+  --teal:   #14b8a6;
+  --teal2:  rgba(20,184,166,.12);
+  --red:    #e05050;
+  --orange: #f47c22;
+  --yellow: #f5c400;
+  --green:  #2cc76a;
+  --blue:   #008cff;
+  --purple: #8c5bd8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;font-size:12px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+input,select,textarea{border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ═══ SHELL ═══════════════════════════════════════════════════ */
+.shell{display:flex;flex-direction:column;height:100vh}
+
+/* ═══ ALERT BANNER ════════════════════════════════════════════ */
+.alert-banner{flex-shrink:0;background:var(--nav);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:7px 16px;gap:10px;}
+.alert-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:4px;background:rgba(224,80,80,.15);border:1px solid rgba(224,80,80,.35);font-size:10px;font-weight:700;color:var(--red);letter-spacing:.3px;text-transform:uppercase;flex-shrink:0;}
+.alert-text{font-size:11px;color:var(--muted);line-height:1.4}
+.alert-text strong{color:#c2d4e8}
+
+/* ═══ TOPBAR ══════════════════════════════════════════════════ */
+.topbar{flex-shrink:0;height:40px;display:flex;align-items:center;background:var(--nav);border-bottom:1px solid var(--border);}
+.tb-logo{width:48px;flex-shrink:0;height:100%;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);}
+.logo-box{width:24px;height:24px;border-radius:5px;background:var(--teal);display:flex;align-items:center;justify-content:center;}
+.logo-mark{font-size:12px;font-weight:800;color:#07101f}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:4px;padding:0 12px}
+.tb-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative}
+.tb-icon:hover{background:var(--card);color:var(--text)}
+.tb-notif-dot{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--nav);}
+.tb-build{padding:2px 7px;border-radius:3px;background:var(--card);border:1px solid var(--border2);font-size:10px;color:var(--muted);}
+.tb-avatar{width:26px;height:26px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+
+/* ═══ BODY ════════════════════════════════════════════════════ */
+.body{display:flex;flex:1;overflow:hidden}
+
+/* ═══ SIDEBAR ════════════════════════════════════════════════ */
+.sidebar{width:44px;flex-shrink:0;background:var(--nav);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;}
+.sb{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;transition:all .15s;}
+.sb:hover{background:var(--card);color:var(--text)}
+.sb.active{background:var(--teal2);color:var(--teal)}
+.sb svg{width:16px;height:16px;flex-shrink:0}
+.sb-sep{width:24px;height:1px;background:var(--border);margin:4px 0}
+
+/* ═══ MAIN ════════════════════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ═══ PAGE HEADER ════════════════════════════════════════════ */
+.page-header{flex-shrink:0;padding:10px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--nav);}
+.page-title{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;color:var(--text);padding-bottom:10px;}
+.page-title svg{color:var(--teal)}
+.tab-bar{display:flex;margin-left:auto}
+.tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ═══ TOOLBAR ════════════════════════════════════════════════ */
+.toolbar{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);}
+.search-wrap{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:5px;border:1px solid var(--border2);background:var(--card);width:180px;}
+.search-wrap svg{color:var(--muted);flex-shrink:0;width:12px;height:12px}
+.search-wrap input{flex:1;font-size:11px;color:var(--text)}
+.search-wrap input::placeholder{color:var(--muted)}
+.filter-chip{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s;}
+.filter-chip:hover{border-color:var(--teal);color:var(--text)}
+.filter-chip-add{height:26px;padding:0 10px;border-radius:4px;border:1px dashed var(--border2);background:transparent;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s;}
+.filter-chip-add:hover{border-color:var(--teal);color:var(--teal)}
+.tb-spacer{flex:1}
+.tb-action{width:28px;height:28px;border-radius:5px;border:1px solid var(--border2);background:var(--card);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;transition:all .15s;}
+.tb-action:hover{border-color:var(--teal);color:var(--teal)}
+.tb-action svg{width:13px;height:13px}
+
+/* ═══ CHECKBOX ═══════════════════════════════════════════════ */
+.cb{
+  width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);
+  background:transparent;appearance:none;-webkit-appearance:none;
+  cursor:pointer;position:relative;flex-shrink:0;transition:all .15s;
+}
+.cb:hover:not(:disabled){border-color:var(--teal)}
+.cb:checked{background:var(--teal);border-color:var(--teal)}
+.cb:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:1.8px solid #07101f;border-top:none;border-left:none;transform:rotate(45deg)}
+.cb:disabled{opacity:.3;cursor:not-allowed}
+
+/* ═══ TABLE ═══════════════════════════════════════════════════ */
+.table-wrap{flex:1;overflow:auto;padding-bottom:60px}
+table{width:100%;border-collapse:collapse;min-width:960px}
+
+thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--panel);border-bottom:1px solid var(--border2);
+  padding:8px 10px;text-align:left;
+  font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;
+}
+thead th.th-pad{width:40px;padding-left:14px}
+thead th:last-child{text-align:center;width:64px}
+
+/* ── CATEGORY TABS (Approved / Pending) ────────────── */
+.cat-tabs{flex-shrink:0;display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--nav);}
+.ctab{display:flex;align-items:center;gap:7px;padding:10px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+.ctab:hover:not(.active){color:var(--text)}
+.ctab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.ctab-count{padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700;background:var(--card);color:var(--muted);}
+.ctab.active .ctab-count{background:var(--teal2);color:var(--teal)}
+
+/* ── GROUP ROW ─────────────────────────────────────── */
+.group-row td{padding:0;border-bottom:1px solid var(--border2);position:sticky;top:33px;z-index:2;}
+.group-hd{display:flex;align-items:center;gap:0;padding:0;user-select:none;}
+.g-cb-zone{display:flex;align-items:center;justify-content:center;width:40px;padding-left:14px;flex-shrink:0;height:36px;cursor:pointer;}
+.g-toggle{display:flex;align-items:center;gap:8px;flex:1;height:36px;padding:0 14px 0 4px;cursor:pointer;transition:background .15s;}
+.g-toggle:hover{background:rgba(255,255,255,.03)}
+
+.group-row.g-sync     td{background:rgba(0,140,255,.05);border-left:3px solid var(--blue)}
+.group-row.g-restore  td{background:rgba(140,91,216,.05);border-left:3px solid var(--purple)}
+.group-row.g-runbook  td{background:rgba(245,196,0,.04);border-left:3px solid var(--yellow)}
+.group-row.g-firmware td{background:rgba(244,124,34,.05);border-left:3px solid var(--orange)}
+
+/* locked (other type selected) */
+.group-row.locked td{opacity:.35}
+.group-row.locked .g-cb-zone{pointer-events:none}
+tr.child-row.locked{opacity:.3;pointer-events:none}
+
+.chevron{width:14px;height:14px;flex-shrink:0;color:var(--muted);transition:transform .2s ease;}
+.chevron.open{transform:rotate(90deg)}
+
+.g-icon{width:22px;height:22px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.g-sync     .g-icon{background:rgba(0,140,255,.15)}
+.g-restore  .g-icon{background:rgba(140,91,216,.15)}
+.g-runbook  .g-icon{background:rgba(245,196,0,.12)}
+.g-firmware .g-icon{background:rgba(244,124,34,.15)}
+
+.g-name{font-size:12px;font-weight:700;letter-spacing:.1px}
+.g-sync     .g-name{color:var(--blue)}
+.g-restore  .g-name{color:var(--purple)}
+.g-runbook  .g-name{color:var(--yellow)}
+.g-firmware .g-name{color:var(--orange)}
+
+.g-count{padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700;}
+.g-sync     .g-count{background:rgba(0,140,255,.15);color:var(--blue)}
+.g-restore  .g-count{background:rgba(140,91,216,.15);color:var(--purple)}
+.g-runbook  .g-count{background:rgba(245,196,0,.12);color:var(--yellow)}
+.g-firmware .g-count{background:rgba(244,124,34,.15);color:var(--orange)}
+
+.g-summary{font-size:10px;color:var(--muted);margin-left:2px}
+
+/* ── CHILD ROWS ─────────────────────────────────────── */
+tbody tr.child-row{border-bottom:1px solid var(--border);transition:background .1s,opacity .2s}
+tbody tr.child-row:hover{background:rgba(255,255,255,.025)}
+tbody tr.child-row.row-selected{background:rgba(20,184,166,.07)}
+tbody tr.child-row.hidden{display:none}
+tbody td{padding:9px 10px;font-size:12px;color:var(--text);white-space:nowrap;vertical-align:middle;}
+tbody td.td-pad{padding-left:14px;width:40px}
+
+.apr-name{font-size:12px;font-weight:500;color:var(--text)}
+.dev-icon{width:28px;height:28px;border-radius:5px;background:var(--panel);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dev-icon svg{width:15px;height:15px}
+.approver-dash{color:var(--dim)}
+
+.req-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.req-avatar{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;flex-shrink:0}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.2px;white-space:nowrap;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge-approved{background:rgba(44,199,106,.12);color:var(--green);border:1px solid rgba(44,199,106,.25)}
+.badge-approved::before{background:var(--green)}
+.badge-pending{background:rgba(244,124,34,.12);color:var(--orange);border:1px solid rgba(244,124,34,.25)}
+.badge-pending::before{background:var(--orange)}
+.badge-rejected{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25)}
+.badge-rejected::before{background:var(--red)}
+
+.type-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;}
+.pill-sync    {background:rgba(0,140,255,.1);color:var(--blue);border:1px solid rgba(0,140,255,.2)}
+.pill-restore {background:rgba(140,91,216,.1);color:var(--purple);border:1px solid rgba(140,91,216,.2)}
+.pill-runbook {background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2)}
+.pill-firmware{background:rgba(244,124,34,.1);color:var(--orange);border:1px solid rgba(244,124,34,.2)}
+
+.req-date{font-size:11px;color:var(--muted)}
+
+/* dot menu */
+.dot-menu-wrap{display:flex;justify-content:center;position:relative}
+.dot-btn{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.dot-btn:hover{background:var(--border2);color:var(--text)}
+.dot-menu{position:absolute;right:0;top:100%;margin-top:4px;z-index:50;background:var(--panel);border:1px solid var(--border2);border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:140px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:all .15s;}
+.dot-menu.open{opacity:1;pointer-events:all;transform:translateY(0)}
+.dot-menu-item{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--text);cursor:pointer;transition:background .1s;}
+.dot-menu-item:hover{background:var(--card)}
+.dot-menu-item.danger{color:var(--red)}
+.dot-menu-item svg{width:13px;height:13px;flex-shrink:0;color:var(--muted)}
+.dot-menu-item.danger svg{color:var(--red)}
+.dot-sep{height:1px;background:var(--border);margin:2px 0}
+
+/* ═══ BULK BAR ════════════════════════════════════════════════ */
+.bulk-bar{
+  position:fixed;bottom:44px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  display:flex;align-items:center;gap:12px;padding:10px 18px;
+  opacity:0;pointer-events:none;transition:all .22s cubic-bezier(.4,0,.2,1);
+  z-index:90;white-space:nowrap;
+}
+.bulk-bar.visible{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+.bulk-sel-info{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.bulk-sel-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--teal2);border:1px solid rgba(20,184,166,.3);font-size:11px;font-weight:700;color:var(--teal);}
+.bulk-sep{width:1px;height:20px;background:var(--border2)}
+.btn-bulk-update{height:30px;padding:0 18px;border-radius:6px;background:var(--teal);color:#07101f;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;transition:background .15s;}
+.btn-bulk-update:hover{background:#0fa394}
+.btn-bulk-update svg{width:12px;height:12px}
+.btn-bulk-clear{height:30px;padding:0 12px;border-radius:6px;border:1px solid var(--border2);color:var(--muted);font-size:11px;font-weight:500;transition:all .15s;}
+.btn-bulk-clear:hover{border-color:var(--text);color:var(--text)}
+
+/* ═══ OVERLAY ═════════════════════════════════════════════════ */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:all}
+
+/* ═══ SIDE PANEL (Bulk Update) ════════════════════════════════ */
+.side-panel{
+  position:fixed;top:0;right:0;bottom:0;width:520px;
+  background:var(--panel);border-left:1px solid var(--border2);
+  display:flex;flex-direction:column;z-index:101;
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+.side-panel.open{transform:translateX(0)}
+.sp-header{flex-shrink:0;padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;}
+.sp-title{font-size:13px;font-weight:700;color:var(--text)}
+.sp-type-tag{margin-left:2px}
+.sp-count{padding:2px 8px;border-radius:10px;background:var(--teal2);border:1px solid rgba(20,184,166,.3);font-size:11px;font-weight:700;color:var(--teal);}
+.sp-close{margin-left:auto;width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.sp-close:hover{background:var(--card);color:var(--text)}
+
+/* panel filters: search + requester */
+.sp-filters{flex-shrink:0;padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sp-search{flex:1;display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:5px;border:1px solid var(--border2);background:var(--card);}
+.sp-search svg{color:var(--muted);width:12px;height:12px;flex-shrink:0}
+.sp-search input{flex:1;font-size:11px;color:var(--text)}
+.sp-search input::placeholder{color:var(--muted)}
+.sp-req-select{
+  width:150px;height:28px;padding:0 24px 0 9px;border-radius:5px;border:1px solid var(--border2);
+  background:var(--card);color:var(--text);font-size:11px;cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235272a0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+}
+
+/* panel list */
+.sp-list{flex:1;overflow-y:auto}
+.sp-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:1px solid var(--border);transition:background .1s;}
+.sp-row:hover{background:var(--card)}
+.sp-row.unchecked{opacity:.45}
+.sp-row-info{flex:1;min-width:0}
+.sp-row-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.sp-row-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+.sp-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.sp-empty{padding:40px 16px;text-align:center;color:var(--muted);font-size:12px}
+
+/* panel footer */
+.sp-footer{flex-shrink:0;padding:12px 16px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:8px;}
+.sp-footer-sel{font-size:11px;color:var(--muted);flex:1}
+.sp-footer-sel span{color:var(--teal);font-weight:700}
+.btn-approve{height:30px;padding:0 16px;border-radius:5px;background:var(--green);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.btn-approve:hover{background:#24b05d}
+.btn-approve:disabled{opacity:.4;pointer-events:none}
+.btn-approve svg{width:12px;height:12px}
+.btn-reject{height:30px;padding:0 16px;border-radius:5px;background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25);font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.btn-reject:hover{background:rgba(224,80,80,.2)}
+.btn-reject:disabled{opacity:.4;pointer-events:none}
+.btn-reject svg{width:12px;height:12px}
+
+/* ═══ REASON MODAL ════════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  width:420px;background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+  box-shadow:0 16px 48px rgba(0,0,0,.6);display:flex;flex-direction:column;
+  transform:translateY(12px) scale(.98);transition:transform .2s;
+}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.modal-hd-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.modal-hd-icon.approve{background:rgba(44,199,106,.12)}
+.modal-hd-icon.reject{background:rgba(224,80,80,.12)}
+.modal-title{font-size:13px;font-weight:700;color:var(--text)}
+.modal-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.modal-body{padding:14px 16px;display:flex;flex-direction:column;gap:7px}
+.modal-label{font-size:11px;font-weight:600;color:var(--muted)}
+.modal-label em{color:var(--red);font-style:normal}
+.modal-body textarea{
+  width:100%;height:76px;padding:9px;border-radius:6px;
+  border:1px solid var(--border2);background:var(--card);
+  font-size:12px;color:var(--text);resize:none;line-height:1.5;
+}
+.modal-body textarea:focus{border-color:var(--teal)}
+.modal-body textarea::placeholder{color:var(--dim)}
+.modal-ft{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.btn-cancel{height:30px;padding:0 14px;border-radius:5px;border:1px solid var(--border2);color:var(--muted);font-size:11px;font-weight:500;}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+.btn-confirm{height:30px;padding:0 16px;border-radius:5px;background:var(--green);color:#fff;font-size:11px;font-weight:700;}
+.btn-confirm:hover{background:#24b05d}
+.btn-confirm:disabled{opacity:.4;pointer-events:none}
+.btn-confirm.reject-mode{background:var(--red)}
+.btn-confirm.reject-mode:hover{background:#c94040}
+
+/* ═══ TOAST ═══════════════════════════════════════════════════ */
+.toast{
+  position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-12px);
+  background:rgba(44,199,106,.12);border:1px solid rgba(44,199,106,.35);
+  color:var(--green);border-radius:8px;padding:9px 16px;
+  font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;
+  opacity:0;pointer-events:none;transition:all .25s;z-index:300;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast svg{width:14px;height:14px;flex-shrink:0}
+
+/* ═══ PAGINATION ══════════════════════════════════════════════ */
+.pagination{position:fixed;bottom:0;left:44px;right:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);background:var(--nav);z-index:10;}
+.pg-info{font-size:11px;color:var(--muted);margin-left:auto}
+.pg-btn{width:24px;height:24px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.pg-btn:disabled{opacity:.3;pointer-events:none}
+.pg-btn svg{width:10px;height:10px}
+.pg-num{height:24px;min-width:24px;padding:0 6px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:var(--teal);color:#07101f;}
+.pg-select{height:24px;padding:0 22px 0 8px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:11px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%235272a0' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;}
+.pg-label{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner">
+    <span class="alert-chip">
+      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2l4.5 8H1.5L6 2z" stroke-linejoin="round"/><path d="M6 6v2M6 9.5v.3" stroke-linecap="round"/></svg>
+      Critical
+    </span>
+    <span class="alert-text">Unable to connect with <strong>STANDALONE DATASTORE : AIOps – 172.16.14.71</strong>. Data synchronization may be affected until connectivity or service is restored.</span>
+  </div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-logo"><div class="logo-box"><span class="logo-mark">M</span></div></div>
+    <div class="tb-right">
+      <div class="tb-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg></div>
+      <div class="tb-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke-linecap="round"/></svg></div>
+      <div class="tb-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3H2a1 1 0 00-1 1v7a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V4a1 1 0 00-1-1z"/></svg></div>
+      <div class="tb-icon" style="position:relative">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a5 5 0 015 5v2.5l1 1.5H2l1-1.5V7a5 5 0 015-5z"/><path d="M6.5 13.5a1.5 1.5 0 003 0" stroke-linecap="round"/></svg>
+        <span class="tb-notif-dot">88</span>
+      </div>
+      <span class="tb-build">BUILD : 8.2.5</span>
+      <div class="tb-avatar">RP</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L8 2l6 6"/><path d="M4 8v6h3v-3h2v3h3V8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a5 5 0 015 5v2.5l1 1.5H2l1-1.5V7a5 5 0 015-5z"/><path d="M6.5 13.5a1.5 1.5 0 003 0"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg></div>
+      <div class="sb-sep"></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 6h4M6 9h4M6 12h2"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="4" r="2"/><circle cx="3" cy="13" r="2"/><circle cx="13" cy="13" r="2"/><path d="M8 6v2M8 8L3 11M8 8l5 3"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 2.5V1M8 15v-1.5M2.5 8H1M15 8h-1.5"/></svg></div>
+      <div class="sb active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/><circle cx="13" cy="12" r="2"/><path d="M12 12h2M13 11v2"/></svg></div>
+      <div class="sb-sep"></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5l1.5 1.5L10 4"/><path d="M6 9l1.5 1.5L10 8"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="9" r="5.5"/><path d="M8 7v2l1.5 1.5"/><path d="M5.5 2.5h5M8 1v2"/></svg></div>
+      <div class="sb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="12" height="8" rx="1.5"/><path d="M5 5V3.5a3 3 0 016 0V5"/><circle cx="8" cy="9" r="1.5"/></svg></div>
+      <div class="sb" style="margin-top:auto"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 2v1M8 13v1M2 8h1M13 8h1M3.5 3.5l.7.7M11.8 11.8l.7.7M11.8 4.2l-.7.7M4.2 11.8l-.7.7"/></svg></div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="page-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><path d="M5.5 8l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Approval
+        </div>
+      </div>
+
+      <!-- CATEGORY TABS -->
+      <div class="cat-tabs">
+        <div class="ctab active" id="tab-pending" onclick="setCat('pending')">
+          Pending <span class="ctab-count" id="tabcnt-pending">0</span>
+        </div>
+        <div class="ctab" id="tab-approved" onclick="setCat('approved')">
+          Approved <span class="ctab-count" id="tabcnt-approved">0</span>
+        </div>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search"/>
+        </div>
+        <button class="filter-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5"/></svg>Device Name</button>
+        <button class="filter-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h8M3 7h6M4 10h4"/></svg>Device Type</button>
+        <button class="filter-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 11c0-2.2 1.8-3.5 4-3.5s4 1.3 4 3.5"/></svg>Approver</button>
+        <button class="filter-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 11c0-2.2 1.8-3.5 4-3.5s4 1.3 4 3.5"/></svg>Requester</button>
+        <button class="filter-chip-add"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2v8M2 6h8" stroke-linecap="round"/></svg>Filter</button>
+        <div class="tb-spacer"></div>
+        <div class="tb-action" title="Export CSV"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 6h4M6 9h4M6 12h2"/></svg></div>
+        <div class="tb-action" title="Export PDF"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h3M6 8h4M6 11h2"/></svg></div>
+        <div class="tb-action" title="Columns"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg></div>
+        <div class="tb-action" title="Advanced Filter"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 8h6M7 12h2"/></svg></div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="th-pad"></th>
+              <th style="min-width:210px">Approvals</th>
+              <th style="min-width:150px">Device Name</th>
+              <th style="width:90px">Device Type</th>
+              <th style="width:100px">Requester</th>
+              <th style="width:90px">Approver</th>
+              <th style="width:100px">Status</th>
+              <th style="width:130px">Type</th>
+              <th style="width:140px">Requested On</th>
+              <th style="width:64px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"><!-- rendered by JS --></tbody>
+        </table>
+      </div>
+
+      <!-- BULK BAR -->
+      <div class="bulk-bar" id="bulkBar">
+        <div class="bulk-sel-info">
+          <span class="bulk-sel-count" id="selCount">0</span>
+          <span id="selLabel">requests selected</span>
+        </div>
+        <div class="bulk-sep"></div>
+        <button class="btn-bulk-update" onclick="openPanel()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h9M2 8h9M2 12h6"/><path d="M12 9v5M9.5 11.5h5" stroke-linecap="round"/></svg>
+          Bulk Update
+        </button>
+        <button class="btn-bulk-clear" onclick="clearSelection()">Clear</button>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination">
+        <button class="pg-btn" disabled><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2L2 5l6 3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="pg-btn" disabled><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2L2 5l4 3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="pg-num">1</div>
+        <button class="pg-btn" disabled><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2l4 3-4 3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="pg-btn" disabled><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l4 3-4 3M6 2l4 3-4 3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <select class="pg-select"><option>50</option><option>100</option><option>200</option></select>
+        <span class="pg-label">items per page</span>
+        <span class="pg-info">1 – 16 of 16 items</span>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /body -->
+</div><!-- /shell -->
+
+<!-- OVERLAY + SIDE PANEL -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="sp-header">
+    <span class="sp-title">Bulk Update</span>
+    <span class="type-pill sp-type-tag" id="spTypeTag"></span>
+    <span class="sp-count" id="spCount">0</span>
+    <button class="sp-close" onclick="closePanel()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="sp-filters">
+    <div class="sp-search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+      <input type="text" id="spSearch" placeholder="Search request / device" oninput="renderPanel()"/>
+    </div>
+    <select class="sp-req-select" id="spReqFilter" onchange="renderPanel()">
+      <option value="">All Requesters</option>
+    </select>
+  </div>
+  <div class="sp-list" id="spList"></div>
+  <div class="sp-footer">
+    <div class="sp-footer-sel"><span id="spFooterCount">0</span> selected for update</div>
+    <button class="btn-reject" id="btnReject" onclick="openReason('reject')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/></svg>
+      Reject
+    </button>
+    <button class="btn-approve" id="btnApprove" onclick="openReason('approve')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Approve
+    </button>
+  </div>
+</div>
+
+<!-- REASON MODAL -->
+<div class="modal-overlay" id="reasonOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-hd-icon approve" id="modalIcon">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="1.8" id="modalIconSvg"><path d="M3 8l3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="modal-title" id="modalTitle">Approve Requests</div>
+        <div class="modal-sub" id="modalSub">3 requests will be approved</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-label">Reason / Note <em>*</em></div>
+      <textarea id="reasonText" placeholder="Enter the reason for this action…" oninput="reasonInput()"></textarea>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-cancel" onclick="closeReason()">Cancel</button>
+      <button class="btn-confirm" id="btnConfirm" onclick="confirmAction()" disabled>Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6.5"/><path d="M5 8l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+/* ═══════════════ DATA ═══════════════ */
+
+/* Action type pills (TYPE column) */
+const ATYPE_META = {
+  sync:     { label:'Sync',             code:'SYNC', pill:'pill-sync',     color:'var(--blue)',   bg:'rgba(0,140,255,.05)',  border:'#008cff',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--blue)" stroke-width="1.7"><path d="M13 8A5 5 0 103 8" stroke-linecap="round"/><path d="M13 4v4h-4" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  restore:  { label:'Restore',          code:'RST',  pill:'pill-restore',  color:'var(--purple)', bg:'rgba(140,91,216,.05)', border:'#8c5bd8',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--purple)" stroke-width="1.7"><path d="M3 8A5 5 0 1013 8" stroke-linecap="round"/><path d="M3 4v4h4" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  runbook:  { label:'Execute Runbook',  code:'RBK',  pill:'pill-runbook',  color:'var(--yellow)', bg:'rgba(245,196,0,.04)',  border:'#f5c400',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--yellow)" stroke-width="1.7"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5l1.5 1.5L10 4"/><path d="M6 9l1.5 1.5L10 8"/></svg>` },
+  firmware: { label:'Firmware Upgrade', code:'FW',   pill:'pill-firmware', color:'var(--orange)', bg:'rgba(244,124,34,.05)', border:'#f47c22',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--orange)" stroke-width="1.7"><rect x="2" y="5" width="12" height="8" rx="1.5"/><path d="M5 5V3.5a3 3 0 016 0V5"/><circle cx="8" cy="9" r="1.5"/></svg>` },
+};
+
+/* Device type metadata — used for grouping */
+const DTYPE_META = {
+  'Router':        { color:'var(--blue)',   bg:'rgba(0,140,255,.05)',   border:'#008cff',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--blue)" stroke-width="1.6"><rect x="1" y="5" width="14" height="6" rx="1.5"/><path d="M4 8h.01M7 8h.01M10 8h.01" stroke-linecap="round"/><path d="M4 5V3M12 5V3M4 11v2M12 11v2" stroke-linecap="round"/></svg>` },
+  'Switch':        { color:'var(--purple)', bg:'rgba(140,91,216,.05)', border:'#8c5bd8',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--purple)" stroke-width="1.6"><rect x="1" y="5" width="14" height="6" rx="1.5"/><path d="M3 8h.01M6 8h.01M9 8h.01M12 8h.01" stroke-linecap="round"/><path d="M3 5V3M6 5V3M9 5V3M12 5V3M3 11v2M6 11v2M9 11v2M12 11v2" stroke-linecap="round"/></svg>` },
+  'Firewall':      { color:'var(--red)',    bg:'rgba(224,80,80,.05)',  border:'#e05050',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--red)" stroke-width="1.6"><path d="M8 2L2 5v3.5C2 12 4.7 13.8 8 14c3.3-.2 6-2 6-5.5V5L8 2z"/></svg>` },
+  'Server':        { color:'var(--teal)',   bg:'rgba(20,184,166,.05)', border:'#14b8a6',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--teal)" stroke-width="1.6"><rect x="2" y="2" width="12" height="4" rx="1"/><rect x="2" y="10" width="12" height="4" rx="1"/><path d="M5 4h.01M5 12h.01" stroke-linecap="round"/></svg>` },
+  'Access Point':  { color:'var(--green)',  bg:'rgba(44,199,106,.05)', border:'#2cc76a',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="1.6"><path d="M2.5 9.5a8 8 0 0111 0" stroke-linecap="round"/><path d="M5 12a5 5 0 016 0" stroke-linecap="round"/><circle cx="8" cy="14.5" r="1.2" fill="var(--green)"/></svg>` },
+  'Load Balancer': { color:'var(--yellow)', bg:'rgba(245,196,0,.04)',  border:'#f5c400',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--yellow)" stroke-width="1.6"><circle cx="8" cy="3" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="13" cy="13" r="1.5"/><path d="M8 4.5V8M8 8L3 11.5M8 8l5 3.5"/></svg>` },
+  'Spine Switch':  { color:'var(--orange)', bg:'rgba(244,124,34,.05)', border:'#f47c22',
+    icon:`<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--orange)" stroke-width="1.6"><rect x="1" y="5" width="14" height="6" rx="1.5"/><path d="M5 8h.01M8 8h.01M11 8h.01" stroke-linecap="round"/><path d="M5 5V2M8 5V2M11 5V2M5 11v3M8 11v3M11 11v3" stroke-linecap="round"/></svg>` },
+};
+
+/* Requests — grouped by actionType + device combo (2+ same combo → group, 1 → individual) */
+const REQUESTS = [
+  /* ── Sync · bgpl.bgpl.com (3) → "Sync – 01" ───────────────── */
+  {id:'APR01', name:'APR: 01 – Cisco IOS Router – sync',    device:'bgpl.bgpl.com',           deviceType:'Router',       actionType:'sync',     requester:'System',  approver:null,      status:'pending',  date:'26-06-05 15:43:05'},
+  {id:'APR02', name:'APR: 02 – Cisco IOS Router – sync',    device:'bgpl.bgpl.com',           deviceType:'Router',       actionType:'sync',     requester:'ravi.k',  approver:null,      status:'pending',  date:'26-06-05 16:02:18'},
+  {id:'APR03', name:'APR: 03 – Cisco IOS Router – sync',    device:'bgpl.bgpl.com',           deviceType:'Router',       actionType:'sync',     requester:'System',  approver:null,      status:'pending',  date:'26-06-05 16:40:51'},
+
+  /* ── Sync · core-router-01.lan (2) → "Sync – 02" ──────────── */
+  {id:'APR04', name:'APR: 04 – Core Router 01 – sync',      device:'core-router-01.lan',      deviceType:'Router',       actionType:'sync',     requester:'System',  approver:null,      status:'pending',  date:'26-06-05 17:05:44'},
+  {id:'APR05', name:'APR: 05 – Core Router 01 – sync',      device:'core-router-01.lan',      deviceType:'Router',       actionType:'sync',     requester:'priya.m', approver:null,      status:'pending',  date:'26-06-05 17:38:12'},
+
+  /* ── Restore · core-sw-01.lan (2) → "Restore – 01" ─────────── */
+  {id:'APR06', name:'APR: 06 – Core Switch 01 – restore',   device:'core-sw-01.lan',          deviceType:'Switch',       actionType:'restore',  requester:'System',  approver:null,      status:'pending',  date:'26-06-05 15:48:21'},
+  {id:'APR07', name:'APR: 07 – Core Switch 01 – restore',   device:'core-sw-01.lan',          deviceType:'Switch',       actionType:'restore',  requester:'ravi.k',  approver:null,      status:'pending',  date:'26-06-05 18:10:09'},
+
+  /* ── Firmware · cisco841.motadata.local (2) → "Firmware Upgrade – 01" ── */
+  {id:'APR08', name:'APR: 08 – cisco841.motadata – firmware',device:'cisco841.motadata.local', deviceType:'Firewall',    actionType:'firmware', requester:'System',  approver:null,      status:'pending',  date:'26-06-05 15:49:23'},
+  {id:'APR09', name:'APR: 09 – cisco841.motadata – firmware',device:'cisco841.motadata.local', deviceType:'Firewall',    actionType:'firmware', requester:'admin',   approver:null,      status:'pending',  date:'26-06-05 16:25:40'},
+
+  /* ── Individuals (unique type+device combos) ─────────────── */
+  {id:'APR10', name:'APR: 10 – Access Switch 04 – restore', device:'access-sw-04.corp',       deviceType:'Switch',       actionType:'restore',  requester:'System',  approver:null,      status:'pending',  date:'26-06-05 18:22:10'},
+  {id:'APR11', name:'APR: 11 – site1.test1.com – runbook',  device:'site1.test1.com',         deviceType:'Server',       actionType:'runbook',  requester:'System',  approver:null,      status:'pending',  date:'26-06-05 15:48:52'},
+  {id:'APR12', name:'APR: 12 – ap-floor2 – runbook',        device:'ap-floor2.corp',          deviceType:'Access Point', actionType:'runbook',  requester:'System',  approver:null,      status:'pending',  date:'26-06-05 18:45:00'},
+  {id:'APR13', name:'APR: 13 – lb-prod-01 – firmware',      device:'lb-prod-01.corp',         deviceType:'Load Balancer',actionType:'firmware', requester:'priya.m', approver:null,      status:'pending',  date:'26-06-05 16:58:47'},
+  {id:'APR14', name:'APR: 14 – spine-sw-01 – firmware',     device:'spine-sw-01.dc',          deviceType:'Spine Switch', actionType:'firmware', requester:'admin',   approver:'admin',   status:'rejected', date:'26-06-05 19:55:02'},
+
+  /* ── Approved tab ─────────────────────────────────────────── */
+  {id:'APR15', name:'APR: 15 – Juniper Router – sync',      device:'juniper-rtr-01.corp.net', deviceType:'Router',       actionType:'sync',     requester:'ravi.k',  approver:'ravi.k',  status:'approved', date:'26-06-05 16:10:22'},
+  {id:'APR16', name:'APR: 16 – Juniper Router – sync',      device:'juniper-rtr-01.corp.net', deviceType:'Router',       actionType:'sync',     requester:'System',  approver:'admin',   status:'approved', date:'26-06-05 17:22:35'},
+  {id:'APR17', name:'APR: 17 – Access Switch 02 – runbook', device:'access-sw-02.corp',       deviceType:'Switch',       actionType:'runbook',  requester:'admin',   approver:'admin',   status:'approved', date:'26-06-05 16:30:11'},
+  {id:'APR18', name:'APR: 18 – Edge Firewall 02 – firmware',device:'edge-fw-02.net',          deviceType:'Firewall',     actionType:'firmware', requester:'priya.m', approver:'priya.m', status:'approved', date:'26-06-05 17:30:55'},
+];
+
+/* ═══════════════ STATE ═══════════════ */
+let activeCat = 'pending';                  // current tab: 'pending' | 'approved'
+const groupOpen = {};                       // keyed "cat-group", default open
+const isOpen = key => groupOpen[key] !== false;
+let selectedIds = new Set();   // ids currently selected for bulk update
+let activeGroup = null;        // only this group's requests may be selected
+let groupIdOf = {};            // combo key → display group id (e.g. GRP-SYNC-01)
+let panelIds = [];             // snapshot of ids shown in the panel
+let reasonMode = 'approve';
+
+const AVATAR_COLORS = { 'System':'#5272a0', 'admin':'#8c5bd8', 'ravi.k':'#008cff', 'priya.m':'#e0589a' };
+
+/* ═══════════════ HELPERS ═══════════════ */
+const $ = id => document.getElementById(id);
+const keyOf = r => r.actionType + '|' + r.device;          // group key: action type + device combo
+const pendingOf = key => REQUESTS.filter(r => keyOf(r) === key && r.status === 'pending');
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function avatarHtml(name){
+  const c = AVATAR_COLORS[name] || '#5272a0';
+  const init = name === 'System' ? 'SY' : name.slice(0,2).toUpperCase();
+  return `<span class="req-avatar" style="background:${c}">${init}</span>`;
+}
+
+function badgeHtml(status){
+  const map = { approved:['badge-approved','Approved'], pending:['badge-pending','Pending'], rejected:['badge-rejected','Rejected'] };
+  const [cls,label] = map[status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+/* ═══════════════ GRID RENDER ═══════════════ */
+const catOf = r => r.status === 'approved' ? 'approved' : 'pending';
+const byCat = cat => REQUESTS.filter(r => catOf(r) === cat);
+
+function summaryText(rows){
+  const counts = {};
+  rows.forEach(r => counts[r.status] = (counts[r.status]||0)+1);
+  return ['approved','pending','rejected']
+    .filter(s => counts[s])
+    .map(s => `${counts[s]} ${s[0].toUpperCase()+s.slice(1)}`)
+    .join(' &nbsp;·&nbsp; ');
+}
+
+function rowHtml(r, hidden, locked){
+  const sel = selectedIds.has(r.id);
+  const am  = ATYPE_META[r.actionType] || {};
+  const dm  = DTYPE_META[r.deviceType] || { color:'var(--teal)', border:'var(--border2)' };
+  const menu = r.status === 'pending' ? `
+    <div class="dot-menu-wrap">
+      <button class="dot-btn" onclick="openMenu(event,'menu-${r.id}')"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="8" cy="13" r="1.3"/></svg></button>
+      <div class="dot-menu" id="menu-${r.id}">
+        <div class="dot-menu-item" onclick="singleAction(event,'${r.id}','approve')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3 3 7-7" stroke-linecap="round"/></svg>Approve</div>
+        <div class="dot-sep"></div>
+        <div class="dot-menu-item danger" onclick="singleAction(event,'${r.id}','reject')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/></svg>Reject</div>
+      </div>
+    </div>` : '';
+  const rowCb = r.status === 'pending'
+    ? `<input type="checkbox" class="cb" ${sel?'checked':''} ${locked?'disabled':''} onclick="rowCbClick(event,'${r.id}')"/>`
+    : '';
+  const devIcon = `<div class="dev-icon" style="border-color:${dm.border}"><svg viewBox="0 0 24 24" fill="none" stroke="${dm.color}" stroke-width="1.6"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M7 12h.01M11 12h.01M15 12h.01" stroke-linecap="round"/><path d="M8 7V5M16 7V5" stroke-linecap="round"/></svg></div>`;
+  return `
+<tr class="child-row ${hidden?'hidden':''} ${locked?'locked':''} ${sel?'row-selected':''}">
+  <td class="td-pad">${rowCb}</td>
+  <td><div class="apr-name">${esc(r.name)}</div></td>
+  <td>${esc(r.device)}</td>
+  <td>${devIcon}</td>
+  <td><span class="req-chip">${avatarHtml(r.requester)}${esc(r.requester)}</span></td>
+  <td>${r.approver ? esc(r.approver) : '<span class="approver-dash">—</span>'}</td>
+  <td>${badgeHtml(r.status)}</td>
+  <td><span class="type-pill ${am.pill||''}">${am.label||r.actionType}</span></td>
+  <td><span class="req-date">${r.date}</span></td>
+  <td>${menu}</td>
+</tr>`;
+}
+
+function renderGrid(){
+  let html = '';
+  const cat     = activeCat;
+  const tabRows = byCat(cat);
+
+  /* bucket by actionType + device combo */
+  const comboMap = {};
+  tabRows.forEach(r => { const k = keyOf(r); (comboMap[k] = comboMap[k]||[]).push(r); });
+
+  /* 2+ requests of same combo → group; exactly 1 → individual */
+  const groups      = Object.entries(comboMap).filter(([,v]) => v.length >= 2).sort((a,b) => b[1].length - a[1].length);
+  const individuals = Object.entries(comboMap).filter(([,v]) => v.length === 1).map(([,v]) => v[0]);
+
+  /* number groups per action type: Sync – 01, Sync – 02, Restore – 01 … */
+  const typeCounters = {};
+  if (cat === 'pending') groupIdOf = {};   // rebuilt each render; used by bulk bar + side panel
+
+  /* ── combo groups ── */
+  groups.forEach(([combo, rows]) => {
+    const atype  = rows[0].actionType;
+    const device = rows[0].device;
+    const am     = ATYPE_META[atype] || { label:atype, color:'var(--muted)', bg:'rgba(82,114,160,.05)', border:'var(--border2)', icon:'' };
+    const num    = String(typeCounters[atype] = (typeCounters[atype]||0)+1).padStart(2,'0');
+    const gid    = `GRP-${am.code || atype.toUpperCase()}-${num}`;
+    if (cat === 'pending') groupIdOf[combo] = gid;
+    const gKey   = cat + '-' + combo;
+    const locked = cat === 'pending' && activeGroup !== null && activeGroup !== combo;
+    const open   = isOpen(gKey);
+
+    /* group select-all checkbox (pending tab only) */
+    const pendRows = rows.filter(r => r.status === 'pending');
+    const selCnt   = pendRows.filter(r => selectedIds.has(r.id)).length;
+    const allSel   = pendRows.length > 0 && selCnt === pendRows.length;
+    const groupCb  = (cat === 'pending' && pendRows.length > 0)
+      ? `<input type="checkbox" class="cb g-cb" data-combo="${combo.replace(/"/g,'&quot;')}" data-part="${selCnt > 0 && !allSel ? 1 : 0}" ${allSel?'checked':''} ${locked?'disabled':''} onclick="groupCbClick(event,this)"/>`
+      : '';
+
+    html += `
+<tr class="group-row ${locked?'locked':''}">
+  <td colspan="10" style="padding:0;border-bottom:1px solid var(--border2);background:${am.bg};border-left:3px solid ${am.border}">
+    <div class="group-hd">
+      <div style="display:flex;align-items:center;padding-left:14px">${groupCb}</div>
+      <div class="g-toggle" onclick="toggleGroup('${gKey.replace(/'/g,"\\'")}')" style="padding-left:${groupCb?'10':'14'}px">
+        <svg class="chevron ${open?'open':''}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-size:10px;font-weight:700;letter-spacing:.5px;font-family:ui-monospace,monospace;color:${am.color};background:${am.bg};border:1px solid ${am.border}55;border-radius:4px;padding:2px 7px">${gid}</span>
+        <span class="g-name" style="color:${am.color}">${am.label} – ${num}</span>
+        <span style="font-size:10.5px;font-weight:600;color:var(--text2);background:rgba(0,0,0,.25);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;margin-left:2px">${esc(device)}</span>
+        <span class="g-count" style="background:${am.bg};color:${am.color}">${rows.length}</span>
+        <span class="g-summary">· ${summaryText(rows)}</span>
+      </div>
+    </div>
+  </td>
+</tr>`;
+    rows.forEach(r => { html += rowHtml(r, !open, locked); });
+  });
+
+  /* ── individual requests separator + rows ── */
+  if (individuals.length > 0) {
+    html += `
+<tr>
+  <td colspan="10" style="padding:6px 16px 4px;background:var(--bg);border-bottom:1px solid var(--border);">
+    <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">
+      Individual Requests &nbsp;·&nbsp; ${individuals.length}
+    </span>
+  </td>
+</tr>`;
+    individuals.forEach(r => {
+      const locked = cat === 'pending' && activeGroup !== null && activeGroup !== keyOf(r);
+      html += rowHtml(r, false, locked);
+    });
+  }
+
+  if (!html) {
+    html = `<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--muted)">No ${cat} requests.</td></tr>`;
+  }
+
+  $('tbody').innerHTML = html;
+  document.querySelectorAll('.g-cb[data-part="1"]').forEach(cb => cb.indeterminate = true);
+  updateTabs();
+  updateBulkBar();
+}
+
+/* ═══════════════ CATEGORY TABS ═══════════════ */
+function setCat(cat){
+  if (cat === activeCat) return;
+  activeCat = cat;
+  renderGrid();
+}
+
+function updateTabs(){
+  $('tabcnt-pending').textContent  = byCat('pending').length;
+  $('tabcnt-approved').textContent = byCat('approved').length;
+  $('tab-pending').classList.toggle('active',  activeCat === 'pending');
+  $('tab-approved').classList.toggle('active', activeCat === 'approved');
+}
+
+/* ═══════════════ SELECTION (request-row checkboxes) ═══════════════ */
+function rowCbClick(e, id){
+  e.stopPropagation();
+  const r = REQUESTS.find(x => x.id === id);
+  if (!r) return;
+  if (activeGroup !== null && activeGroup !== keyOf(r)) return;
+
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+
+  activeGroup = selectedIds.size > 0 ? keyOf(r) : null;
+  renderGrid();
+}
+
+function clearSelection(){
+  selectedIds.clear();
+  activeGroup = null;
+  renderGrid();
+}
+
+/* group header checkbox — select/deselect every pending request in the group */
+function groupCbClick(e, cb){
+  e.stopPropagation();
+  const combo = cb.dataset.combo;
+  if (activeGroup !== null && activeGroup !== combo) return; // another group locked
+
+  const pendRows = pendingOf(combo);
+  const allSel   = pendRows.length > 0 && pendRows.every(r => selectedIds.has(r.id));
+
+  if (allSel) pendRows.forEach(r => selectedIds.delete(r.id));
+  else        pendRows.forEach(r => selectedIds.add(r.id));
+
+  activeGroup = selectedIds.size > 0 ? combo : null;
+  renderGrid();
+}
+
+function updateBulkBar(){
+  const n = selectedIds.size;
+  $('selCount').textContent = n;
+  if (activeGroup) {
+    const [at, dev] = activeGroup.split('|');
+    const gid = groupIdOf[activeGroup];
+    $('selLabel').textContent = `${gid ? gid + ' · ' : ''}${(ATYPE_META[at]||{}).label || at} · ${dev} requests selected`;
+  } else {
+    $('selLabel').textContent = 'requests selected';
+  }
+  $('bulkBar').classList.toggle('visible', n > 0);
+}
+
+/* ═══════════════ GROUP COLLAPSE ═══════════════ */
+function toggleGroup(key){
+  groupOpen[key] = !isOpen(key);
+  renderGrid();
+}
+
+/* ═══════════════ SIDE PANEL ═══════════════ */
+function openPanel(){
+  if (selectedIds.size === 0) return;
+  panelIds = pendingOf(activeGroup).map(r => r.id);
+  const [at, dev] = activeGroup.split('|');
+  const am  = ATYPE_META[at] || {};
+  const gid = groupIdOf[activeGroup];
+  $('spTypeTag').className = 'type-pill sp-type-tag ' + (am.pill || '');
+  $('spTypeTag').textContent = `${gid ? gid + ' · ' : ''}${am.label || at} · ${dev}`;
+
+  // requester filter options from panel rows
+  const reqs = [...new Set(panelIds.map(id => REQUESTS.find(r => r.id === id).requester))];
+  $('spReqFilter').innerHTML = '<option value="">All Requesters</option>' +
+    reqs.map(q => `<option value="${q}">${q}</option>`).join('');
+  $('spSearch').value = '';
+
+  renderPanel();
+  $('overlay').classList.add('open');
+  $('sidePanel').classList.add('open');
+}
+
+function closePanel(){
+  $('overlay').classList.remove('open');
+  $('sidePanel').classList.remove('open');
+}
+
+function renderPanel(){
+  const q   = $('spSearch').value.trim().toLowerCase();
+  const req = $('spReqFilter').value;
+
+  const rows = panelIds
+    .map(id => REQUESTS.find(r => r.id === id))
+    .filter(r => !q  || r.name.toLowerCase().includes(q) || r.device.toLowerCase().includes(q))
+    .filter(r => !req || r.requester === req);
+
+  if (rows.length === 0) {
+    $('spList').innerHTML = '<div class="sp-empty">No requests match the current filter.</div>';
+  } else {
+    $('spList').innerHTML = rows.map(r => {
+      const sel = selectedIds.has(r.id);
+      return `
+<div class="sp-row ${sel ? '' : 'unchecked'}">
+  <input type="checkbox" class="cb" ${sel ? 'checked' : ''} onclick="panelCbToggle('${r.id}')"/>
+  <div class="sp-row-info">
+    <div class="sp-row-name">${esc(r.name)}</div>
+    <div class="sp-row-meta">
+      <span>${esc(r.device)}</span>
+      <span class="req-chip">${avatarHtml(r.requester)}${esc(r.requester)}</span>
+    </div>
+  </div>
+  <div class="sp-row-right">
+    ${badgeHtml(r.status)}
+    <span class="req-date">${r.date}</span>
+  </div>
+</div>`;
+    }).join('');
+  }
+
+  const n = selectedIds.size;
+  $('spCount').textContent = panelIds.length;
+  $('spFooterCount').textContent = n;
+  $('btnApprove').disabled = n === 0;
+  $('btnReject').disabled  = n === 0;
+}
+
+function panelCbToggle(id){
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  if (selectedIds.size === 0) activeGroup = activeGroup; // keep type context while panel open
+  renderPanel();
+  renderGrid();
+}
+
+/* ═══════════════ REASON MODAL → FINAL ACTION ═══════════════ */
+let singleId = null; // set when action comes from a row dot-menu
+
+function openReason(mode){
+  if (!singleId && selectedIds.size === 0) return;
+  reasonMode = mode;
+  const n = singleId ? 1 : selectedIds.size;
+  const isApprove = mode === 'approve';
+
+  $('modalTitle').textContent = isApprove ? 'Approve Requests' : 'Reject Requests';
+  $('modalSub').textContent   = `${n} request${n > 1 ? 's' : ''} will be ${isApprove ? 'approved' : 'rejected'}`;
+  $('modalIcon').className    = 'modal-hd-icon ' + (isApprove ? 'approve' : 'reject');
+  $('modalIconSvg').setAttribute('stroke', isApprove ? 'var(--green)' : 'var(--red)');
+  $('modalIconSvg').innerHTML = isApprove
+    ? '<path d="M3 8l3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/>';
+  const btn = $('btnConfirm');
+  btn.textContent = isApprove ? 'Approve' : 'Reject';
+  btn.classList.toggle('reject-mode', !isApprove);
+  btn.disabled = true;
+  $('reasonText').value = '';
+  $('reasonOverlay').classList.add('open');
+  setTimeout(() => $('reasonText').focus(), 200);
+}
+
+function closeReason(){
+  $('reasonOverlay').classList.remove('open');
+  singleId = null;
+}
+
+function reasonInput(){
+  $('btnConfirm').disabled = $('reasonText').value.trim().length === 0;
+}
+
+function confirmAction(){
+  const ids = singleId ? [singleId] : [...selectedIds];
+  const newStatus = reasonMode === 'approve' ? 'approved' : 'rejected';
+  ids.forEach(id => {
+    const r = REQUESTS.find(x => x.id === id);
+    if (r) { r.status = newStatus; r.approver = 'admin'; }
+  });
+
+  const n = ids.length;
+  closeReason();
+  closePanel();
+  selectedIds.clear();
+  activeGroup = null;
+  renderGrid();
+  showToast(`${n} request${n > 1 ? 's' : ''} ${newStatus} successfully`);
+}
+
+function singleAction(e, id, mode){
+  e.stopPropagation();
+  closeMenus();
+  singleId = id;
+  openReason(mode);
+}
+
+/* ═══════════════ TOAST ═══════════════ */
+let toastTimer = null;
+function showToast(msg){
+  $('toastMsg').textContent = msg;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3200);
+}
+
+/* ═══════════════ DOT MENU ═══════════════ */
+function openMenu(e, id){
+  e.stopPropagation();
+  const m = $(id);
+  const already = m.classList.contains('open');
+  closeMenus();
+  if (!already) m.classList.add('open');
+}
+function closeMenus(){
+  document.querySelectorAll('.dot-menu').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', closeMenus);
+
+/* ═══════════════ INIT ═══════════════ */
+renderGrid();
+</script>
+</body>
+</html>

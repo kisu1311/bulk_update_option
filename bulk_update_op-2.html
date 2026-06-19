@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bulk Update – Op 2 | ObserveOps</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07101f;--nav:#0c1a2e;--panel:#0e2036;--card:#11223a;
+  --border:#18304a;--border2:#1e3a56;--text:#c2d4e8;--muted:#5272a0;
+  --teal:#14b8a6;--teal2:rgba(20,184,166,.12);--red:#e05050;
+  --orange:#f47c22;--yellow:#f5c400;--green:#2cc76a;--blue:#008cff;--purple:#8c5bd8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;font-size:12px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+input,textarea,select{border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+.shell{display:flex;flex-direction:column;height:100vh}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:40px;display:flex;align-items:center;background:var(--nav);border-bottom:1px solid var(--border);z-index:10}
+.tb-logo{width:178px;flex-shrink:0;height:100%;display:flex;align-items:center;gap:9px;padding:0 13px;border-right:1px solid var(--border)}
+.logo-box{width:24px;height:24px;border-radius:5px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-word{font-size:13px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:4px;padding:0 12px}
+.tb-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.tb-icon:hover{background:var(--card);color:var(--text)}
+.tb-avatar{width:26px;height:26px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;cursor:pointer}
+.build-badge{padding:2px 6px;border-radius:3px;background:var(--card);border:1px solid var(--border2);font-size:10px;color:var(--muted)}
+
+/* LAYOUT */
+.body-split{display:flex;flex:1;overflow:hidden}
+.sidebar{width:44px;flex-shrink:0;background:var(--nav);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;overflow-y:auto}
+.sb-item{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer}
+.sb-item:hover{background:var(--card);color:var(--text)}
+.sb-item.active{background:var(--teal2);color:var(--teal)}
+.sb-item svg{width:16px;height:16px;flex-shrink:0}
+.sb-divider{width:24px;height:1px;background:var(--border);margin:4px 0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* PAGE HEADER */
+.page-header{flex-shrink:0;padding:10px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.page-title{font-size:15px;font-weight:700;color:var(--text);padding-bottom:10px}
+.tab-bar{display:flex;gap:0;margin-left:auto}
+.tab-item{padding:8px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-item.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tab-item:hover{color:var(--text)}
+
+/* TYPE FILTER BAR */
+.type-filter-bar{flex-shrink:0;padding:0 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0}
+.type-filter-tab{padding:7px 14px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.type-filter-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.type-filter-tab:hover{color:var(--text)}
+.type-filter-count{padding:1px 5px;border-radius:8px;background:var(--card);font-size:10px;font-weight:700;color:var(--muted)}
+.type-filter-tab.active .type-filter-count{background:var(--teal2);color:var(--teal)}
+
+/* TOOLBAR */
+.toolbar{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.filter-btn{height:28px;padding:0 10px;border-radius:5px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;transition:all .15s}
+.filter-btn:hover{border-color:var(--teal);color:var(--text)}
+.filter-btn svg{width:12px;height:12px}
+.sel-count{font-size:11px;color:var(--teal);font-weight:600;padding:0 6px;opacity:0;transition:opacity .2s}
+.sel-count.visible{opacity:1}
+.spacer{flex:1}
+
+/* SPLIT BUTTON */
+.bulk-split{display:flex;align-items:center;opacity:.4;pointer-events:none;transition:opacity .15s}
+.bulk-split.active{opacity:1;pointer-events:all}
+.bulk-main-btn{height:28px;padding:0 12px;border-radius:5px 0 0 5px;background:var(--teal);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;transition:background .15s}
+.bulk-main-btn:hover{background:#0fa898}
+.bulk-main-btn svg{width:12px;height:12px}
+.bulk-divider{width:1px;height:28px;background:rgba(255,255,255,.2);flex-shrink:0}
+.bulk-arrow-btn{height:28px;padding:0 8px;border-radius:0 5px 5px 0;background:var(--teal);color:#fff;display:flex;align-items:center;transition:background .15s;position:relative}
+.bulk-arrow-btn:hover{background:#0fa898}
+.bulk-arrow-btn svg{width:10px;height:10px}
+.bulk-dropdown{position:absolute;top:calc(100% + 4px);right:0;min-width:180px;background:var(--card);border:1px solid var(--border2);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:50;display:none;flex-direction:column;overflow:hidden}
+.bulk-dropdown.open{display:flex}
+.dd-item{padding:9px 12px;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
+.dd-item:hover{background:var(--panel)}
+.dd-item svg{width:13px;height:13px;flex-shrink:0}
+.dd-item-label{flex:1}
+.dd-item-badge{padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700}
+.dd-item.op1 svg{color:var(--green)}
+.dd-item.op1 .dd-item-badge{background:rgba(44,199,106,.1);color:var(--green);border:1px solid rgba(44,199,106,.2)}
+.dd-item.op2 svg{color:var(--blue)}
+.dd-item.op2 .dd-item-badge{background:rgba(0,140,255,.1);color:var(--blue);border:1px solid rgba(0,140,255,.2)}
+.dd-sep{height:1px;background:var(--border);margin:2px 0}
+.dd-arrow-wrap{position:relative}
+
+/* TABLE */
+.table-wrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--border2);padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+thead th:first-child{width:36px;padding-left:14px}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--card)}
+tbody tr.selected{background:rgba(20,184,166,.06)}
+tbody td{padding:9px 10px;font-size:12px;color:var(--text);white-space:nowrap}
+tbody td:first-child{padding-left:14px}
+.cb-wrap{display:flex;align-items:center;justify-content:center}
+.cb{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);background:transparent;appearance:none;cursor:pointer;position:relative;flex-shrink:0}
+.cb:checked{background:var(--teal);border-color:var(--teal)}
+.cb:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.cb-head{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);background:transparent;appearance:none;cursor:pointer;position:relative;flex-shrink:0}
+.cb-head:checked{background:var(--teal);border-color:var(--teal)}
+.cb-head:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.cb-head.indeterminate{background:var(--teal);border-color:var(--teal)}
+.cb-head.indeterminate::after{content:'';position:absolute;left:2px;top:5px;width:8px;height:2px;background:#fff}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.2px}
+.badge-pending{background:rgba(244,124,34,.12);color:var(--orange);border:1px solid rgba(244,124,34,.25)}
+.badge-approved{background:rgba(44,199,106,.12);color:var(--green);border:1px solid rgba(44,199,106,.25)}
+.badge-rejected{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25)}
+.badge-assigned{background:rgba(0,140,255,.12);color:var(--blue);border:1px solid rgba(0,140,255,.25)}
+.type-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.type-sync{background:rgba(0,140,255,.1);color:var(--blue);border:1px solid rgba(0,140,255,.2)}
+.type-restore{background:rgba(140,91,216,.1);color:var(--purple);border:1px solid rgba(140,91,216,.2)}
+.type-runbook{background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2)}
+.dev-icon{width:20px;height:20px;border-radius:3px;background:var(--panel);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center}
+.action-dots{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.action-dots:hover{background:var(--border);color:var(--text)}
+
+/* PAGINATION */
+.pagination{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);background:var(--nav)}
+.pg-info{font-size:11px;color:var(--muted)}
+.pg-btn{height:24px;padding:0 8px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-size:11px}
+.pg-btn:hover{border-color:var(--teal);color:var(--text)}
+.pg-select{height:24px;padding:0 6px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:11px;cursor:pointer}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:all}
+
+/* SIDE PANEL */
+.side-panel{position:fixed;top:0;right:0;bottom:0;width:540px;background:var(--panel);border-left:1px solid var(--border2);display:flex;flex-direction:column;z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.side-panel.open{transform:translateX(0)}
+
+.sp-header{flex-shrink:0;padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.sp-title{font-size:13px;font-weight:700;color:var(--text)}
+.sp-count{padding:2px 8px;border-radius:10px;background:var(--teal2);border:1px solid rgba(20,184,166,.3);font-size:11px;font-weight:700;color:var(--teal)}
+.sp-close{margin-left:auto;width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.sp-close:hover{background:var(--card);color:var(--text)}
+
+.op-strip{flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:8px}
+.op-strip-label{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.op-toggle{display:flex;border-radius:6px;border:1px solid var(--border2);overflow:hidden;background:var(--card)}
+.op-btn{height:26px;padding:0 12px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.op-btn.active{background:var(--teal2);color:var(--teal);font-weight:600}
+.op-btn svg{width:11px;height:11px}
+
+/* Panel body = left cat nav + right content */
+.sp-body{flex:1;display:flex;overflow:hidden}
+
+.sp-cat-nav{
+  width:120px;flex-shrink:0;background:var(--card);
+  border-right:1px solid var(--border2);
+  overflow-y:auto;padding:8px 0;display:flex;flex-direction:column;
+}
+.sp-cat-item{
+  padding:10px 10px 10px 14px;font-size:11px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-left:2px solid transparent;
+  transition:all .15s;display:flex;flex-direction:column;gap:5px;
+}
+.sp-cat-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.sp-cat-item.active{color:var(--teal);border-left-color:var(--teal);background:rgba(20,184,166,.06)}
+.sp-cat-name{line-height:1.3}
+.sp-cat-count{
+  display:inline-block;padding:2px 6px;border-radius:8px;
+  background:var(--border2);font-size:10px;font-weight:700;color:var(--muted);
+  align-self:flex-start;
+}
+.sp-cat-item.active .sp-cat-count{background:rgba(20,184,166,.2);color:var(--teal)}
+
+.sp-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sp-list{flex:1;overflow-y:auto;padding:8px 0}
+
+/* Panel rows — no checkbox */
+.sp-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.sp-row:hover{background:rgba(255,255,255,.02)}
+.sp-row-info{flex:1;min-width:0}
+.sp-row-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.sp-row-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.sp-row-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sp-row-approver{font-size:10px;color:var(--muted);white-space:nowrap;padding:2px 6px;border-radius:3px;background:var(--card);border:1px solid var(--border2)}
+.req-dot{width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0}
+.sp-empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:12px}
+
+/* FOOTER */
+.sp-footer{flex-shrink:0;padding:12px 16px;border-top:1px solid var(--border2);display:flex;flex-direction:column;gap:10px}
+.sp-footer-actions{display:flex;align-items:center;gap:8px}
+.sp-footer-info{font-size:11px;color:var(--muted);flex:1}
+.sp-footer-info strong{color:var(--text)}
+
+.btn-approve{height:30px;padding:0 16px;border-radius:5px;background:var(--green);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-approve:hover{background:#24b05d}
+.btn-reject{height:30px;padding:0 14px;border-radius:5px;background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25);font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-reject:hover{background:rgba(224,80,80,.2)}
+.btn-assign{height:30px;padding:0 16px;border-radius:5px;background:var(--blue);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-assign:hover{background:#007ae0}
+.btn-cancel{height:28px;padding:0 12px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:11px;font-weight:500}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* Reject note */
+.sp-note{display:none;flex-direction:column;gap:6px}
+.sp-note.visible{display:flex}
+.sp-note-label{font-size:11px;font-weight:600;color:var(--muted)}
+.sp-note textarea{width:100%;height:60px;padding:8px;border-radius:5px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:12px;resize:none;transition:border .15s;font-family:inherit}
+.sp-note textarea:focus{border-color:var(--teal);outline:none}
+.sp-note-actions{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.btn-confirm{height:28px;padding:0 14px;border-radius:5px;font-size:11px;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn-confirm-approve{background:var(--green);color:#fff}
+.btn-confirm-approve:hover{background:#24b05d}
+.btn-confirm-reject{background:var(--red);color:#fff}
+.btn-confirm-reject:hover{background:#c43a3a}
+
+/* Assign section */
+.assign-section{display:none;flex-direction:column;gap:8px}
+.assign-section.visible{display:flex}
+.assign-label{font-size:11px;font-weight:600;color:var(--muted)}
+.assign-label span{color:var(--blue)}
+.assign-row{display:flex;align-items:center;gap:8px}
+.assign-select-wrap{flex:1;height:32px;border-radius:5px;border:1px solid var(--border2);background:var(--card);display:flex;align-items:center;padding:0 10px;gap:8px;transition:border .15s}
+.assign-select-wrap:focus-within{border-color:var(--blue)}
+.assign-select-wrap svg{width:13px;height:13px;color:var(--muted);flex-shrink:0}
+.assign-select-wrap select{flex:1;font-size:12px;color:var(--text);cursor:pointer;background:transparent;border:none;outline:none;appearance:none}
+.assign-note{width:100%;height:52px;padding:8px;border-radius:5px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:12px;resize:none;transition:border .15s;font-family:inherit}
+.assign-note:focus{border-color:var(--blue);outline:none}
+.assign-note::placeholder{color:var(--muted)}
+.assign-actions{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;z-index:200;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="topbar">
+    <div class="tb-logo">
+      <div class="logo-box">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#fff" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="logo-word">ObserveOps</span>
+    </div>
+    <div class="tb-right">
+      <button class="tb-icon"><svg viewBox="0 0 16 16" fill="none" width="15" height="15"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <button class="tb-icon"><svg viewBox="0 0 16 16" fill="none" width="15" height="15"><path d="M8 2a4 4 0 0 1 4 4v2l1 2H3l1-2V6a4 4 0 0 1 4-4z" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <div class="build-badge">Build : 8.2.5</div>
+      <div class="tb-avatar">RP</div>
+    </div>
+  </div>
+
+  <div class="body-split">
+    <div class="sidebar">
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="11" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 5h2M5 7v2M11 7v3a1 1 0 0 1-1 1H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V6l5-3 5 3v6l-5 3-5-3z" stroke="currentColor" stroke-width="1.3"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item active"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1l2 4.5L15 6.3l-3.5 3.4.8 4.8L8 12.1l-4.3 2.4.8-4.8L1 6.3l5-.8L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+      <div class="sb-item" style="margin-top:auto"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M6 2h4v2l1 1v3l-1 1H6L5 8V5l1-1V2z" stroke="currentColor" stroke-width="1.3"/><path d="M8 10v4M5 14h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+    </div>
+
+    <div class="main">
+      <div class="page-header">
+        <span class="page-title">Approval</span>
+        <div class="tab-bar">
+          <div class="tab-item active">All Requests</div>
+          <div class="tab-item">My Pending</div>
+          <div class="tab-item">Approved</div>
+          <div class="tab-item">Rejected</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="4" height="4" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="4" height="4" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 7v6M11 3v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Device Type
+        </button>
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Approver
+        </button>
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 7h8M6 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Filter
+        </button>
+        <div class="sel-count" id="selCount">0 selected</div>
+        <div class="spacer"></div>
+        <div class="bulk-split" id="bulkSplit">
+          <button class="bulk-main-btn" onclick="openPanel('approve')">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 5h12M2 8h12M2 11h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 11l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Bulk Update
+          </button>
+          <div class="bulk-divider"></div>
+          <div class="dd-arrow-wrap">
+            <button class="bulk-arrow-btn" onclick="toggleDropdown(event)">
+              <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="bulk-dropdown" id="bulkDropdown">
+              <div class="dd-item op1" onclick="openPanel('approve');closeDropdown()">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="dd-item-label">Approve / Reject</span>
+                <span class="dd-item-badge">Op 1</span>
+              </div>
+              <div class="dd-sep"></div>
+              <div class="dd-item op2" onclick="openPanel('assign');closeDropdown()">
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span class="dd-item-label">Assign Approver</span>
+                <span class="dd-item-badge">Op 2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="type-filter-bar" id="typeFilterBar"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="cb-head" id="selectAll" onchange="toggleAll(this)"/></th>
+              <th>Device Name</th>
+              <th>Device Type</th>
+              <th>Approver</th>
+              <th>Status</th>
+              <th>Type</th>
+              <th>Requested On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="pg-btn">‹</button>
+        <button class="pg-btn" style="background:var(--teal2);border-color:var(--teal);color:var(--teal)">1</button>
+        <button class="pg-btn">2</button>
+        <button class="pg-btn">3</button>
+        <button class="pg-btn">›</button>
+        <div class="spacer"></div>
+        <span class="pg-info">1 – 20 of 100 items</span>
+        <select class="pg-select"><option>20 / page</option><option>50 / page</option><option>100 / page</option></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<div class="side-panel" id="sidePanel">
+  <div class="sp-header">
+    <svg id="spIcon" viewBox="0 0 16 16" fill="none" width="16" height="16" style="flex-shrink:0"></svg>
+    <span class="sp-title" id="spTitle">Bulk Update</span>
+    <span class="sp-count" id="spCount">0 Pending</span>
+    <button class="sp-close" onclick="closePanel()">
+      <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="op-strip">
+    <span class="op-strip-label">Operation:</span>
+    <div class="op-toggle">
+      <button class="op-btn" id="opBtn1" onclick="switchOp('approve')">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Approve / Reject
+      </button>
+      <button class="op-btn" id="opBtn2" onclick="switchOp('assign')">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Assign Approver
+      </button>
+    </div>
+  </div>
+
+  <!-- Body: left category nav + right request list -->
+  <div class="sp-body">
+    <nav class="sp-cat-nav" id="spCatNav"></nav>
+    <div class="sp-content">
+      <div class="sp-list" id="spList"></div>
+    </div>
+  </div>
+
+  <div class="sp-footer">
+    <!-- Op 1 -->
+    <div id="footerOp1">
+      <div class="sp-footer-actions">
+        <span class="sp-footer-info"><strong id="spCatCount">0</strong> requests</span>
+        <button class="btn-reject" onclick="showNote()">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Reject All
+        </button>
+        <button class="btn-approve" onclick="confirmApproveAll()">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Approve All
+        </button>
+      </div>
+      <div class="sp-note" id="spNote">
+        <div class="sp-note-label">Rejection Reason <span style="color:var(--red)">*</span></div>
+        <textarea id="noteText" placeholder="Enter reason for rejection..."></textarea>
+        <div class="sp-note-actions">
+          <button class="btn-cancel" onclick="hideNote()">Cancel</button>
+          <button class="btn-confirm btn-confirm-reject" onclick="confirmRejectAll()">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Confirm Reject
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Op 2 -->
+    <div id="footerOp2" style="display:none">
+      <div class="sp-footer-actions">
+        <span class="sp-footer-info"><strong id="spCatCount2">0</strong> requests</span>
+        <button class="btn-assign" onclick="showAssign()">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Assign Approver
+        </button>
+      </div>
+      <div class="assign-section" id="assignSection">
+        <div class="assign-label">Assign to <span>*</span></div>
+        <div class="assign-row">
+          <div class="assign-select-wrap">
+            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <select id="assignTarget">
+              <option value="">Select approver...</option>
+              <option>admin</option>
+              <option>bgp1.bgp1.com</option>
+              <option>site1.test.com</option>
+              <option>ospf3.ospf3.com</option>
+              <option>netops-lead</option>
+              <option>infra-team</option>
+            </select>
+          </div>
+        </div>
+        <textarea class="assign-note" id="assignNote" placeholder="Reason for reassignment (optional)..."></textarea>
+        <div class="assign-actions">
+          <button class="btn-cancel" onclick="hideAssign()">Cancel</button>
+          <button class="btn-confirm btn-confirm-approve" onclick="confirmAssign()">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Confirm Assign
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-dot" id="toastDot"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+const TYPES = ['Sync','Restore','Execute Runbook']
+const REQUESTERS = ['Kishan','Ronak','Admin','John','Sarah','Mehul','Priya','Dev']
+const APPROVERS = ['admin','bgp1.bgp1.com','—','site1.test.com','ospf3.ospf3.com']
+const DEVICES = [
+  'bgp1.bgp1.com','ospf3.ospf3.com → res...','test.com → runb...','IOS Router → res...',
+  '141.motadata.lo...','bgp2.bgp2.com','ospf1.ospf1.com','test2.com → sync',
+  'IOS Router → sync','cisco841.motadata.local','bgp3.bgp3.com','ospf4.ospf4.com',
+  'test3.com → rest','IOS Router → fw','145.motadata.lo...','bgp4.bgp4.com',
+  'ospf5.ospf5.com','test4.com → run','IOS Router → bkp','cisco842.mdata.local'
+]
+const reqColors = {
+  Kishan:'#14b8a6',Ronak:'#8c5bd8',Admin:'#008cff',
+  John:'#f47c22',Sarah:'#e05050',Mehul:'#2cc76a',Priya:'#f5c400',Dev:'#5272a0'
+}
+
+function genRows(n){
+  const rows=[]
+  for(let i=0;i<n;i++){
+    rows.push({
+      id:i+1,
+      device:DEVICES[i%DEVICES.length],
+      approver:APPROVERS[i%APPROVERS.length],
+      status:'Pending',
+      type:TYPES[i%3],
+      requester:REQUESTERS[i%REQUESTERS.length],
+      date:`26-06-05 ${String(15+Math.floor(i/6)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')}:${String((i*13)%60).padStart(2,'0')}`,
+      selected:false,
+    })
+  }
+  rows[0].status='Approved'
+  return rows
+}
+
+const allRows=genRows(100)
+const pageRows=allRows.slice(0,20)
+
+let activeTableType='All'
+let currentOp='approve'
+let panelTypes=[]
+let activePanelType=null
+
+// ── MAIN TABLE TYPE FILTER ──────────────────────────────────────
+function buildTypeFilterBar(){
+  const bar=document.getElementById('typeFilterBar')
+  bar.innerHTML=''
+  ;['All',...TYPES].forEach(t=>{
+    const count=t==='All'?pageRows.length:pageRows.filter(r=>r.type===t).length
+    const div=document.createElement('div')
+    div.className='type-filter-tab'+(t===activeTableType?' active':'')
+    div.innerHTML=`${t} <span class="type-filter-count">${count}</span>`
+    div.onclick=()=>{activeTableType=t;buildTypeFilterBar();renderTable()}
+    bar.appendChild(div)
+  })
+}
+
+// ── MAIN TABLE ──────────────────────────────────────────────────
+function renderTable(){
+  const tbody=document.getElementById('tableBody')
+  tbody.innerHTML=''
+  const rows=activeTableType==='All'?pageRows:pageRows.filter(r=>r.type===activeTableType)
+  rows.forEach(row=>{
+    const tr=document.createElement('tr')
+    if(row.selected) tr.classList.add('selected')
+    const typeCls=row.type==='Sync'?'type-sync':row.type==='Restore'?'type-restore':'type-runbook'
+    const stsBadge=row.status==='Approved'?'badge-approved':row.status==='Rejected'?'badge-rejected':row.status==='Assigned'?'badge-assigned':'badge-pending'
+    tr.innerHTML=`
+      <td><div class="cb-wrap"><input type="checkbox" class="cb" ${row.selected?'checked':''} onchange="toggleRow(${row.id-1},this)"/></div></td>
+      <td style="font-size:11px;color:var(--muted)">${row.device}</td>
+      <td><div class="dev-icon"><svg viewBox="0 0 14 14" fill="none" width="10" height="10"><rect x="1" y="2" width="12" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 11v2M9 11v2M4 13h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div></td>
+      <td style="font-size:11px">${row.approver}</td>
+      <td><span class="badge ${stsBadge}">${row.status}</span></td>
+      <td><span class="type-pill ${typeCls}">${row.type}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${row.date}</td>
+      <td><button class="action-dots"><svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="4" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg></button></td>
+    `
+    tr.querySelector('input').addEventListener('click',e=>e.stopPropagation())
+    tr.addEventListener('click',()=>toggleRowById(row.id-1))
+    tbody.appendChild(tr)
+  })
+  updateHeaderCheckbox()
+  updateBulkBtn()
+}
+
+function toggleRow(idx,cb){pageRows[idx].selected=cb.checked;renderTable()}
+function toggleRowById(idx){pageRows[idx].selected=!pageRows[idx].selected;renderTable()}
+function toggleAll(cb){pageRows.forEach(r=>r.selected=cb.checked);renderTable()}
+function updateHeaderCheckbox(){
+  const sel=pageRows.filter(r=>r.selected).length
+  const cb=document.getElementById('selectAll')
+  cb.checked=sel===pageRows.length&&sel>0
+  if(sel>0&&sel<pageRows.length){cb.classList.add('indeterminate');cb.checked=false}
+  else cb.classList.remove('indeterminate')
+}
+function updateBulkBtn(){
+  const n=pageRows.filter(r=>r.selected).length
+  document.getElementById('bulkSplit').classList.toggle('active',n>0)
+  const cnt=document.getElementById('selCount')
+  cnt.classList.toggle('visible',n>0)
+  cnt.textContent=n+' selected'
+}
+
+// ── DROPDOWN ────────────────────────────────────────────────────
+function toggleDropdown(e){e.stopPropagation();document.getElementById('bulkDropdown').classList.toggle('open')}
+function closeDropdown(){document.getElementById('bulkDropdown').classList.remove('open')}
+document.addEventListener('click',closeDropdown)
+
+// ── PANEL HELPERS ───────────────────────────────────────────────
+function getPanelRows(){return pageRows.filter(r=>r.selected&&r.status==='Pending')}
+function getPanelRowsByType(type){return getPanelRows().filter(r=>r.type===type)}
+
+// ── OPEN / CLOSE PANEL ──────────────────────────────────────────
+function openPanel(op){
+  const pending=getPanelRows()
+  if(!pending.length){
+    if(pageRows.some(r=>r.selected)) showToast('var(--orange)','No pending requests in selection')
+    return
+  }
+  panelTypes=TYPES.filter(t=>getPanelRowsByType(t).length>0)
+  activePanelType=panelTypes[0]
+  currentOp=op
+  document.getElementById('overlay').classList.add('open')
+  document.getElementById('sidePanel').classList.add('open')
+  document.body.style.overflow='hidden'
+  applyOp(op)
+  refreshPanel()
+}
+
+function closePanel(){
+  document.getElementById('overlay').classList.remove('open')
+  document.getElementById('sidePanel').classList.remove('open')
+  document.body.style.overflow=''
+  panelTypes=[]
+  activePanelType=null
+  hideNote()
+  hideAssign()
+}
+
+function switchOp(op){
+  currentOp=op
+  applyOp(op)
+  hideNote()
+  hideAssign()
+}
+
+function applyOp(op){
+  const isAssign=op==='assign'
+  document.getElementById('opBtn1').classList.toggle('active',!isAssign)
+  document.getElementById('opBtn2').classList.toggle('active',isAssign)
+  document.getElementById('footerOp1').style.display=isAssign?'none':'block'
+  document.getElementById('footerOp2').style.display=isAssign?'block':'none'
+  const icon=document.getElementById('spIcon')
+  const title=document.getElementById('spTitle')
+  const cnt=document.getElementById('spCount')
+  if(isAssign){
+    icon.innerHTML='<circle cx="8" cy="5" r="2.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/>'
+    title.textContent='Bulk Assign Approver'
+    cnt.style.cssText='background:rgba(0,140,255,.12);border-color:rgba(0,140,255,.3);color:var(--blue)'
+  } else {
+    icon.innerHTML='<path d="M2 5h12M2 8h12M2 11h8" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round"/><path d="M11 11l2 2 3-3" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    title.textContent='Bulk Approve / Reject'
+    cnt.style.cssText='background:var(--teal2);border-color:rgba(20,184,166,.3);color:var(--teal)'
+  }
+}
+
+// ── PANEL RENDER ─────────────────────────────────────────────────
+function refreshPanel(){
+  buildCatNav()
+  renderPanelList()
+  updatePanelFooter()
+}
+
+function buildCatNav(){
+  const nav=document.getElementById('spCatNav')
+  nav.innerHTML=''
+  panelTypes.forEach(t=>{
+    const count=getPanelRowsByType(t).length
+    const div=document.createElement('div')
+    div.className='sp-cat-item'+(t===activePanelType?' active':'')
+    div.innerHTML=`<span class="sp-cat-name">${t}</span><span class="sp-cat-count">${count}</span>`
+    div.onclick=()=>{
+      activePanelType=t
+      buildCatNav()
+      renderPanelList()
+      updatePanelFooter()
+      hideNote()
+      hideAssign()
+    }
+    nav.appendChild(div)
+  })
+  // header count
+  const total=getPanelRows().length
+  document.getElementById('spCount').textContent=total+' Pending'
+}
+
+function renderPanelList(){
+  const list=document.getElementById('spList')
+  if(!activePanelType){list.innerHTML='<div class="sp-empty">All requests processed</div>';return}
+  const rows=getPanelRowsByType(activePanelType)
+  if(!rows.length){list.innerHTML='<div class="sp-empty">No requests in this category</div>';return}
+  list.innerHTML=''
+  rows.forEach(row=>{
+    const div=document.createElement('div')
+    div.className='sp-row'
+    const color=reqColors[row.requester]||'#5272a0'
+    const init=row.requester[0].toUpperCase()
+    div.innerHTML=`
+      <div class="sp-row-info">
+        <div class="sp-row-name">${row.device}</div>
+        <div class="sp-row-meta">
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="req-dot" style="background:${color}">${init}</div>
+            <span style="color:${color};font-weight:600">${row.requester}</span>
+          </div>
+          <span>·</span><span>${row.date}</span>
+        </div>
+      </div>
+      <div class="sp-row-right">
+        <span class="sp-row-approver">${row.approver}</span>
+        <span class="badge badge-pending" style="font-size:9px">Pending</span>
+      </div>
+    `
+    list.appendChild(div)
+  })
+}
+
+function updatePanelFooter(){
+  const n=activePanelType?getPanelRowsByType(activePanelType).length:0
+  document.getElementById('spCatCount').textContent=n
+  document.getElementById('spCatCount2').textContent=n
+}
+
+// ── CATEGORY ADVANCE ─────────────────────────────────────────────
+function advanceCategory(){
+  panelTypes=panelTypes.filter(t=>t!==activePanelType)
+  if(panelTypes.length===0){
+    setTimeout(closePanel,600)
+  } else {
+    activePanelType=panelTypes[0]
+    refreshPanel()
+  }
+}
+
+// ── OP 1: APPROVE ALL / REJECT ALL ──────────────────────────────
+function confirmApproveAll(){
+  const rows=getPanelRowsByType(activePanelType)
+  if(!rows.length) return
+  const n=rows.length
+  const type=activePanelType
+  rows.forEach(r=>{r.status='Approved';r.selected=false})
+  renderTable()
+  showToast('var(--green)',`${n} ${type} request(s) approved`)
+  advanceCategory()
+}
+
+function showNote(){
+  document.getElementById('spNote').classList.add('visible')
+  document.getElementById('noteText').value=''
+  document.getElementById('noteText').focus()
+}
+function hideNote(){
+  document.getElementById('spNote').classList.remove('visible')
+  document.getElementById('noteText').value=''
+}
+function confirmRejectAll(){
+  const note=document.getElementById('noteText').value.trim()
+  if(!note){
+    const ta=document.getElementById('noteText')
+    ta.style.borderColor='var(--red)'
+    setTimeout(()=>ta.style.borderColor='',1500)
+    return
+  }
+  const rows=getPanelRowsByType(activePanelType)
+  const n=rows.length
+  const type=activePanelType
+  rows.forEach(r=>{r.status='Rejected';r.selected=false})
+  renderTable()
+  hideNote()
+  showToast('var(--red)',`${n} ${type} request(s) rejected`)
+  advanceCategory()
+}
+
+// ── OP 2: ASSIGN ─────────────────────────────────────────────────
+function showAssign(){
+  document.getElementById('assignSection').classList.add('visible')
+  document.getElementById('assignTarget').value=''
+  document.getElementById('assignNote').value=''
+  document.getElementById('assignTarget').focus()
+}
+function hideAssign(){
+  document.getElementById('assignSection').classList.remove('visible')
+}
+function confirmAssign(){
+  const target=document.getElementById('assignTarget').value
+  if(!target){
+    const wrap=document.getElementById('assignTarget').closest('.assign-select-wrap')
+    wrap.style.borderColor='var(--red)'
+    setTimeout(()=>wrap.style.borderColor='',1500)
+    return
+  }
+  const rows=getPanelRowsByType(activePanelType)
+  const n=rows.length
+  const type=activePanelType
+  rows.forEach(r=>{r.approver=target;r.status='Assigned';r.selected=false})
+  renderTable()
+  hideAssign()
+  showToast('var(--blue)',`${n} ${type} request(s) assigned to "${target}"`)
+  advanceCategory()
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function showToast(color,msg){
+  const t=document.getElementById('toast')
+  document.getElementById('toastDot').style.background=color
+  document.getElementById('toastMsg').textContent=msg
+  t.classList.add('show')
+  setTimeout(()=>t.classList.remove('show'),3500)
+}
+
+buildTypeFilterBar()
+renderTable()
+</script>
+</body>
+</html>

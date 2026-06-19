@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bulk Update v4 – AI Triage | ObserveOps</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══ TOKENS ══════════════════════════════════════════════════ */
+:root{
+  --bg:#07101f;--nav:#0c1a2e;--panel:#0e2036;--card:#11223a;
+  --border:#18304a;--border2:#1e3a56;--text:#c2d4e8;--muted:#5272a0;--dim:#2c4460;
+  --teal:#14b8a6;--teal2:rgba(20,184,166,.12);
+  --red:#e05050;--orange:#f47c22;--yellow:#f5c400;--green:#2cc76a;--blue:#008cff;--purple:#8c5bd8;
+  --ai:#a855f7;--ai2:rgba(168,85,247,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;font-size:12px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+input,textarea,select{border:none;background:none;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ═══ SHELL ═══════════════════════════════════════════════════ */
+.shell{display:flex;flex-direction:column;height:100vh}
+.topbar{flex-shrink:0;height:40px;display:flex;align-items:center;background:var(--nav);border-bottom:1px solid var(--border);z-index:10}
+.tb-logo{width:178px;flex-shrink:0;height:100%;display:flex;align-items:center;gap:9px;padding:0 13px;border-right:1px solid var(--border)}
+.logo-box{width:24px;height:24px;border-radius:5px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-word{font-size:13px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:4px;padding:0 12px}
+.tb-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.tb-icon:hover{background:var(--card);color:var(--text)}
+.tb-avatar{width:26px;height:26px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;cursor:pointer}
+.build-badge{padding:2px 6px;border-radius:3px;background:var(--card);border:1px solid var(--border2);font-size:10px;color:var(--muted)}
+.body-split{display:flex;flex:1;overflow:hidden}
+.sidebar{width:44px;flex-shrink:0;background:var(--nav);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;overflow-y:auto}
+.sb-item{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer}
+.sb-item:hover{background:var(--card);color:var(--text)}
+.sb-item.active{background:var(--teal2);color:var(--teal)}
+.sb-item svg{width:16px;height:16px;flex-shrink:0}
+.sb-divider{width:24px;height:1px;background:var(--border);margin:4px 0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.page-header{flex-shrink:0;padding:10px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.page-title{font-size:15px;font-weight:700;color:var(--text);padding-bottom:10px}
+.tab-bar{display:flex;gap:0;margin-left:auto}
+.tab-item{padding:8px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-item.active{color:var(--teal);border-bottom-color:var(--teal)}
+.toolbar{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.filter-btn{height:28px;padding:0 10px;border-radius:5px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;transition:all .15s}
+.filter-btn:hover{border-color:var(--teal);color:var(--text)}
+.filter-btn svg{width:12px;height:12px}
+.sel-count{font-size:11px;color:var(--teal);font-weight:600;padding:0 6px;opacity:0;transition:opacity .2s}
+.sel-count.visible{opacity:1}
+.spacer{flex:1}
+
+/* Split button */
+.bulk-split{display:flex;align-items:center;opacity:.4;pointer-events:none;transition:opacity .15s}
+.bulk-split.active{opacity:1;pointer-events:all}
+.bulk-main-btn{height:28px;padding:0 12px;border-radius:5px 0 0 5px;background:var(--ai);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;transition:background .15s}
+.bulk-main-btn:hover{background:#9333ea}
+.bulk-main-btn svg{width:12px;height:12px}
+.bulk-divider{width:1px;height:28px;background:rgba(255,255,255,.25);flex-shrink:0}
+.bulk-arrow-btn{height:28px;padding:0 8px;border-radius:0 5px 5px 0;background:var(--ai);color:#fff;display:flex;align-items:center;transition:background .15s;position:relative}
+.bulk-arrow-btn:hover{background:#9333ea}
+.bulk-dropdown{position:absolute;top:calc(100%+4px);right:0;min-width:210px;background:var(--card);border:1px solid var(--border2);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;display:none;flex-direction:column;overflow:hidden}
+.bulk-dropdown.open{display:flex}
+.dd-item{padding:10px 12px;font-size:12px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s}
+.dd-item:hover{background:var(--panel)}
+.dd-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dd-item-info .dd-label{font-size:12px;font-weight:600}
+.dd-item-info .dd-hint{font-size:10px;color:var(--muted);margin-top:1px}
+.dd-sep{height:1px;background:var(--border);margin:2px 0}
+.dd-arrow-wrap{position:relative}
+
+/* Table */
+.table-wrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--border2);padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+thead th:first-child{width:36px;padding-left:14px}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--card)}
+tbody tr.selected{background:rgba(20,184,166,.06)}
+tbody td{padding:9px 10px;font-size:12px;color:var(--text);white-space:nowrap}
+tbody td:first-child{padding-left:14px}
+.cb-wrap{display:flex;align-items:center;justify-content:center}
+.cb{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);background:transparent;appearance:none;cursor:pointer;position:relative;flex-shrink:0}
+.cb:checked{background:var(--teal);border-color:var(--teal)}
+.cb:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.cb-head{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);background:transparent;appearance:none;cursor:pointer;position:relative;flex-shrink:0}
+.cb-head:checked{background:var(--teal);border-color:var(--teal)}
+.cb-head:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.cb-head.indeterminate{background:var(--teal);border-color:var(--teal)}
+.cb-head.indeterminate::after{content:'';position:absolute;left:2px;top:5px;width:8px;height:2px;background:#fff}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.2px}
+.badge-pending{background:rgba(244,124,34,.12);color:var(--orange);border:1px solid rgba(244,124,34,.25)}
+.badge-approved{background:rgba(44,199,106,.12);color:var(--green);border:1px solid rgba(44,199,106,.25)}
+.badge-rejected{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25)}
+.badge-assigned{background:rgba(0,140,255,.12);color:var(--blue);border:1px solid rgba(0,140,255,.25)}
+.type-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.type-sync{background:rgba(0,140,255,.1);color:var(--blue);border:1px solid rgba(0,140,255,.2)}
+.type-restore{background:rgba(140,91,216,.1);color:var(--purple);border:1px solid rgba(140,91,216,.2)}
+.type-runbook{background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2)}
+.dev-icon{width:20px;height:20px;border-radius:3px;background:var(--panel);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center}
+.action-dots{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.action-dots:hover{background:var(--border);color:var(--text)}
+.pagination{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);background:var(--nav)}
+.pg-info{font-size:11px;color:var(--muted)}
+.pg-btn{height:24px;padding:0 8px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-size:11px}
+.pg-btn:hover{border-color:var(--teal);color:var(--text)}
+.pg-select{height:24px;padding:0 6px;border-radius:4px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:11px;cursor:pointer}
+
+/* ══════════════════════════════════════════════════════════════
+   AI TRIAGE MODAL  (completely new UX)
+══════════════════════════════════════════════════════════════ */
+.triage-overlay{
+  position:fixed;inset:0;background:rgba(5,10,20,.88);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+  backdrop-filter:blur(4px);
+}
+.triage-overlay.open{opacity:1;pointer-events:all}
+
+.triage-modal{
+  width:min(98vw,1140px);height:min(92vh,700px);
+  background:var(--panel);border:1px solid var(--border2);border-radius:12px;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
+  transform:translateY(16px) scale(.98);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.triage-overlay.open .triage-modal{transform:none}
+
+/* ─── Triage Header ─── */
+.triage-header{
+  flex-shrink:0;padding:13px 18px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:12px;
+}
+.triage-ai-pill{
+  height:22px;padding:0 9px;border-radius:11px;
+  background:var(--ai2);border:1px solid rgba(168,85,247,.3);
+  display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--ai);
+}
+.triage-ai-pill svg{width:10px;height:10px}
+.triage-title{font-size:14px;font-weight:700;color:var(--text)}
+.triage-sep{color:var(--border2);font-size:16px}
+.triage-sub{font-size:12px;color:var(--muted)}
+.kbd-hints{
+  margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);
+}
+.kbd{
+  padding:2px 5px;border-radius:3px;background:var(--card);border:1px solid var(--border2);
+  font-size:10px;font-family:monospace;color:var(--text);
+}
+.triage-close{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);margin-left:8px;
+}
+.triage-close:hover{background:var(--card);color:var(--text)}
+
+/* ─── AI Analysis Banner ─── */
+.ai-banner{
+  flex-shrink:0;padding:10px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(168,85,247,.06) 0%,transparent 100%);
+}
+.ai-brain-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:var(--ai2);border:1px solid rgba(168,85,247,.25);
+  display:flex;align-items:center;justify-content:center;color:var(--ai);
+}
+.ai-banner-body{flex:1;min-width:0}
+.ai-banner-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.ai-banner-title .ai-thinking{font-size:10px;color:var(--ai);font-weight:400;display:none}
+.ai-banner-title .ai-thinking.active{display:inline}
+.ai-chips{display:flex;gap:5px;flex-wrap:wrap}
+.ai-chip{
+  padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;
+  display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:opacity .15s;
+}
+.ai-chip:hover{opacity:.8}
+.chip-low{background:rgba(44,199,106,.12);color:var(--green);border:1px solid rgba(44,199,106,.25)}
+.chip-med{background:rgba(244,124,34,.12);color:var(--orange);border:1px solid rgba(244,124,34,.25)}
+.chip-high{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25)}
+.chip-conflict{background:rgba(245,196,0,.12);color:var(--yellow);border:1px solid rgba(245,196,0,.25)}
+.ai-banner-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-ai-apply{
+  height:28px;padding:0 12px;border-radius:5px;
+  background:var(--ai);color:#fff;font-size:11px;font-weight:600;
+  display:flex;align-items:center;gap:5px;transition:background .15s;
+}
+.btn-ai-apply:hover{background:#9333ea}
+.btn-ai-apply svg{width:11px;height:11px}
+.btn-ai-reset{
+  height:28px;padding:0 10px;border-radius:5px;
+  border:1px solid var(--border2);background:transparent;
+  font-size:11px;font-weight:500;color:var(--muted);
+  display:flex;align-items:center;gap:5px;transition:all .15s;
+}
+.btn-ai-reset:hover{border-color:var(--text);color:var(--text)}
+
+/* ─── Filter bar inside triage ─── */
+.triage-filter-bar{
+  flex-shrink:0;padding:8px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.tri-search{
+  width:220px;height:28px;border-radius:5px;border:1px solid var(--border2);
+  background:var(--card);display:flex;align-items:center;gap:6px;padding:0 8px;
+}
+.tri-search svg{width:12px;height:12px;color:var(--muted);flex-shrink:0}
+.tri-search input{flex:1;font-size:11px;color:var(--text)}
+.tri-search input::placeholder{color:var(--muted)}
+.tri-type-tabs{display:flex;gap:0}
+.tri-tab{
+  padding:5px 11px;font-size:11px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-radius:4px;transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.tri-tab.active{background:var(--teal2);color:var(--teal)}
+.tri-tab:hover:not(.active){color:var(--text);background:var(--card)}
+.tri-tab-count{font-size:10px;font-weight:700;opacity:.7}
+.sort-btn{
+  margin-left:auto;height:28px;padding:0 10px;border-radius:5px;
+  border:1px solid var(--border2);background:var(--card);
+  color:var(--muted);font-size:11px;display:flex;align-items:center;gap:5px;
+}
+.sort-btn:hover{border-color:var(--muted);color:var(--text)}
+
+/* ─── Three-column Triage Body ─── */
+.triage-body{
+  flex:1;overflow:hidden;display:grid;
+  grid-template-columns:1fr 1fr 1fr;gap:0;
+}
+.triage-col{
+  display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;
+}
+.triage-col:last-child{border-right:none}
+
+.col-header{
+  flex-shrink:0;padding:10px 14px 9px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.col-header-icon{
+  width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.col-pending .col-header-icon{background:rgba(82,114,160,.15);color:var(--muted)}
+.col-approve .col-header-icon{background:rgba(44,199,106,.12);color:var(--green)}
+.col-reject .col-header-icon{background:rgba(224,80,80,.12);color:var(--red)}
+.col-title{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.col-count-badge{
+  padding:2px 7px;border-radius:8px;font-size:11px;font-weight:700;
+}
+.col-pending .col-count-badge{background:var(--card);color:var(--muted)}
+.col-approve .col-count-badge{background:rgba(44,199,106,.12);color:var(--green)}
+.col-reject .col-count-badge{background:rgba(224,80,80,.12);color:var(--red)}
+.col-clear{
+  height:20px;padding:0 7px;border-radius:4px;font-size:10px;font-weight:600;
+  color:var(--muted);border:1px solid var(--border);transition:all .15s;
+}
+.col-clear:hover{color:var(--text);border-color:var(--muted)}
+
+/* Column list & drop zones */
+.col-list{
+  flex:1;overflow-y:auto;padding:8px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:background .15s;
+}
+.col-list.drag-over-approve{background:rgba(44,199,106,.05);outline:2px dashed rgba(44,199,106,.3);outline-offset:-4px}
+.col-list.drag-over-reject{background:rgba(224,80,80,.05);outline:2px dashed rgba(224,80,80,.3);outline-offset:-4px}
+.col-list.drag-over-pending{background:rgba(82,114,160,.05);outline:2px dashed rgba(82,114,160,.3);outline-offset:-4px}
+
+/* Drop placeholder when column is empty */
+.drop-placeholder{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--dim);font-size:11px;gap:6px;min-height:80px;
+}
+.drop-placeholder svg{opacity:.3;width:22px;height:22px}
+
+/* ─── Triage Cards ─── */
+.triage-card{
+  background:var(--card);border:1px solid var(--border2);border-radius:7px;
+  padding:10px 11px;cursor:grab;transition:all .15s;
+  position:relative;user-select:none;
+}
+.triage-card:hover{border-color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.triage-card.dragging{opacity:.5;cursor:grabbing;transform:scale(.97)}
+.triage-card.is-conflict{border-color:rgba(245,196,0,.35);background:rgba(245,196,0,.04)}
+
+/* Card top row */
+.card-top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.risk-badge{
+  padding:1px 6px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.4px;
+  text-transform:uppercase;flex-shrink:0;
+}
+.risk-low{background:rgba(44,199,106,.12);color:var(--green);border:1px solid rgba(44,199,106,.2)}
+.risk-medium{background:rgba(244,124,34,.12);color:var(--orange);border:1px solid rgba(244,124,34,.2)}
+.risk-high{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.2)}
+.conflict-badge{
+  padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;
+  background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2);
+  display:flex;align-items:center;gap:3px;
+}
+.card-type{margin-left:auto}
+.card-actions{display:flex;gap:3px;margin-left:4px}
+.card-btn{
+  width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;opacity:0;
+}
+.triage-card:hover .card-btn{opacity:1}
+.card-btn-approve{background:rgba(44,199,106,.1);color:var(--green);border:1px solid rgba(44,199,106,.2)}
+.card-btn-approve:hover{background:rgba(44,199,106,.25)}
+.card-btn-reject{background:rgba(224,80,80,.1);color:var(--red);border:1px solid rgba(224,80,80,.2)}
+.card-btn-reject:hover{background:rgba(224,80,80,.25)}
+.card-btn-back{background:rgba(82,114,160,.1);color:var(--muted);border:1px solid var(--border2)}
+.card-btn-back:hover{background:rgba(82,114,160,.2);color:var(--text)}
+.card-btn svg{width:10px;height:10px;pointer-events:none}
+
+/* Card device */
+.card-device{font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3}
+.card-meta{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin-bottom:5px}
+.req-dot{width:13px;height:13px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff;flex-shrink:0}
+.card-requester{font-weight:600}
+.card-approver-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:6px;border-top:1px solid var(--border);margin-top:2px;
+}
+.card-approver-label{font-size:10px;color:var(--dim)}
+.card-approver-val{font-size:10px;color:var(--muted);background:var(--panel);padding:1px 6px;border-radius:3px;border:1px solid var(--border)}
+/* Keyboard focused card */
+.triage-card.kbd-focus{
+  border-color:var(--teal);box-shadow:0 0 0 2px rgba(20,184,166,.2);
+}
+
+/* Rejection note per card in reject column */
+.card-note-wrap{
+  margin-top:7px;padding-top:6px;border-top:1px solid var(--border);
+  display:none;
+}
+.col-reject .triage-card .card-note-wrap{display:block}
+.card-note{
+  width:100%;height:36px;padding:5px 7px;border-radius:4px;
+  border:1px solid var(--border2);background:var(--panel);color:var(--text);
+  font-size:11px;resize:none;transition:border .15s;font-family:inherit;
+}
+.card-note:focus{border-color:var(--red);outline:none}
+.card-note::placeholder{color:var(--dim)}
+
+/* ─── Triage Footer ─── */
+.triage-footer{
+  flex-shrink:0;padding:11px 18px;border-top:1px solid var(--border2);
+  display:flex;align-items:center;gap:12px;background:var(--nav);
+}
+.triage-stats{display:flex;align-items:center;gap:8px;flex:1}
+.stat-chip{
+  display:flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:6px;font-size:11px;font-weight:600;
+}
+.stat-chip-queue{background:var(--card);color:var(--muted);border:1px solid var(--border2)}
+.stat-chip-approve{background:rgba(44,199,106,.1);color:var(--green);border:1px solid rgba(44,199,106,.2)}
+.stat-chip-reject{background:rgba(224,80,80,.1);color:var(--red);border:1px solid rgba(224,80,80,.2)}
+.stat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.stat-dot-approve{background:var(--green)}
+.stat-dot-reject{background:var(--red)}
+.stat-dot-queue{background:var(--muted)}
+.triage-footer-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-schedule{
+  height:30px;padding:0 12px;border-radius:5px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--muted);font-size:11px;font-weight:500;
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+.btn-schedule:hover{border-color:var(--blue);color:var(--blue)}
+.btn-schedule svg{width:11px;height:11px}
+.btn-cancel-triage{
+  height:30px;padding:0 12px;border-radius:5px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--muted);font-size:11px;font-weight:500;
+  transition:all .15s;
+}
+.btn-cancel-triage:hover{border-color:var(--text);color:var(--text)}
+.btn-confirm-triage{
+  height:30px;padding:0 16px;border-radius:5px;
+  background:var(--teal);color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+  opacity:.4;pointer-events:none;
+}
+.btn-confirm-triage.active{opacity:1;pointer-events:all}
+.btn-confirm-triage:hover{background:#0fa898}
+.btn-confirm-triage svg{width:12px;height:12px}
+
+/* ─── Undo toast (wide, with countdown bar) ─── */
+.undo-bar{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card);border:1px solid var(--border2);border-radius:8px;
+  min-width:340px;z-index:300;opacity:0;transition:all .3s;pointer-events:none;
+  overflow:hidden;
+}
+.undo-bar.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all}
+.undo-bar-inner{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.undo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.undo-msg{flex:1;font-size:12px;color:var(--text)}
+.undo-msg strong{font-weight:700}
+.btn-undo{
+  height:26px;padding:0 12px;border-radius:5px;font-size:11px;font-weight:700;
+  background:var(--teal);color:#fff;transition:background .15s;
+}
+.btn-undo:hover{background:#0fa898}
+.undo-progress{height:2px;background:var(--teal);transform-origin:left;transition:transform linear}
+
+/* ─── General toast ─── */
+.toast{
+  position:fixed;bottom:24px;right:20px;
+  background:var(--card);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;
+  z-index:400;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;
+  transform:translateY(10px);
+}
+.toast.show{opacity:1;transform:none}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ─── Schedule modal ─── */
+.schedule-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:350;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.schedule-modal.open{opacity:1;pointer-events:all}
+.schedule-box{
+  width:340px;background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+  padding:20px;box-shadow:0 16px 40px rgba(0,0,0,.5);
+}
+.sch-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.sch-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+.sch-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.sch-input{
+  width:100%;height:32px;padding:0 10px;border-radius:5px;
+  border:1px solid var(--border2);background:var(--card);color:var(--text);
+  font-size:12px;margin-bottom:12px;
+}
+.sch-input:focus{border-color:var(--blue);outline:none}
+.sch-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.btn-sch-cancel{height:28px;padding:0 12px;border-radius:5px;border:1px solid var(--border2);font-size:11px;font-weight:500;color:var(--muted)}
+.btn-sch-cancel:hover{color:var(--text);border-color:var(--text)}
+.btn-sch-confirm{height:28px;padding:0 12px;border-radius:5px;background:var(--blue);color:#fff;font-size:11px;font-weight:600}
+.btn-sch-confirm:hover{background:#007ae0}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-logo">
+      <div class="logo-box">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#fff" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="logo-word">ObserveOps</span>
+    </div>
+    <div class="tb-right">
+      <button class="tb-icon"><svg viewBox="0 0 16 16" fill="none" width="15" height="15"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <button class="tb-icon"><svg viewBox="0 0 16 16" fill="none" width="15" height="15"><path d="M8 2a4 4 0 0 1 4 4v2l1 2H3l1-2V6a4 4 0 0 1 4-4z" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <div class="build-badge">Build : 8.2.5</div>
+      <div class="tb-avatar">RP</div>
+    </div>
+  </div>
+
+  <div class="body-split">
+    <div class="sidebar">
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="11" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 5h2M5 7v2M11 7v3a1 1 0 0 1-1 1H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V6l5-3 5 3v6l-5 3-5-3z" stroke="currentColor" stroke-width="1.3"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item active"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1l2 4.5L15 6.3l-3.5 3.4.8 4.8L8 12.1l-4.3 2.4.8-4.8L1 6.3l5-.8L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+      <div class="sb-item" style="margin-top:auto"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div class="sb-item"><svg viewBox="0 0 16 16" fill="none"><path d="M6 2h4v2l1 1v3l-1 1H6L5 8V5l1-1V2z" stroke="currentColor" stroke-width="1.3"/><path d="M8 10v4M5 14h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+    </div>
+
+    <div class="main">
+      <div class="page-header">
+        <span class="page-title">Approval</span>
+        <div class="tab-bar">
+          <div class="tab-item active">All Requests</div>
+          <div class="tab-item">My Pending</div>
+          <div class="tab-item">Approved</div>
+          <div class="tab-item">Rejected</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="4" height="4" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="4" height="4" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 7v6M11 3v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Device Type
+        </button>
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Approver
+        </button>
+        <button class="filter-btn">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 7h8M6 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Filter
+        </button>
+        <div class="sel-count" id="selCount">0 selected</div>
+        <div class="spacer"></div>
+        <!-- AI-branded split button -->
+        <div class="bulk-split" id="bulkSplit">
+          <button class="bulk-main-btn" onclick="openTriage()">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M8 2c1 0 2 .4 2.7 1.1L13 5.5c.7.7 1 1.7 1 2.7 0 2-1.6 3.6-3.6 3.6-.6 0-1.2-.2-1.7-.5L7 10l-1.3 1.3C5.3 11.7 4.7 12 4 12c-1.1 0-2-.9-2-2 0-.7.3-1.3.7-1.7L4 7 2.7 5.7C2.3 5.2 2 4.5 2 3.8 2 2.3 3.3 1 4.8 1c.7 0 1.4.3 1.9.8L8 3l.3-.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M11 12h2M12 11v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            AI Triage
+          </button>
+          <div class="bulk-divider"></div>
+          <div class="dd-arrow-wrap">
+            <button class="bulk-arrow-btn" id="arrowBtn" onclick="toggleDropdown(event)">
+              <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="bulk-dropdown" id="bulkDropdown">
+              <div class="dd-item" onclick="openTriage('approve');closeDropdown()">
+                <div class="dd-icon" style="background:rgba(44,199,106,.1);color:var(--green)">
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="dd-item-info">
+                  <div class="dd-label">Approve / Reject Triage</div>
+                  <div class="dd-hint">AI-assisted 3-column drag triage</div>
+                </div>
+              </div>
+              <div class="dd-sep"></div>
+              <div class="dd-item" onclick="openTriage('assign');closeDropdown()">
+                <div class="dd-icon" style="background:rgba(0,140,255,.1);color:var(--blue)">
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="7" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-2.76 2.24-5 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11 10l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="dd-item-info">
+                  <div class="dd-label">Assign Approver</div>
+                  <div class="dd-hint">Reassign selected to another approver</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="cb-head" id="selectAll" onchange="toggleAll(this)"/></th>
+              <th>Device Name</th><th>Device Type</th><th>Approver</th>
+              <th>Status</th><th>Type</th><th>Requested On</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="pg-btn">‹</button>
+        <button class="pg-btn" style="background:var(--teal2);border-color:var(--teal);color:var(--teal)">1</button>
+        <button class="pg-btn">2</button><button class="pg-btn">3</button>
+        <button class="pg-btn">›</button>
+        <div class="spacer"></div>
+        <span class="pg-info">1 – 20 of 100 items</span>
+        <select class="pg-select"><option>20 / page</option><option>50 / page</option></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     AI TRIAGE MODAL
+══════════════════════════════════════════ -->
+<div class="triage-overlay" id="triageOverlay">
+  <div class="triage-modal">
+
+    <!-- Header -->
+    <div class="triage-header">
+      <div class="triage-ai-pill">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2c1 0 2 .4 2.7 1.1L12 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8.5l1 1 2-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        AI Triage
+      </div>
+      <span class="triage-title">Bulk Decision</span>
+      <span class="triage-sep">·</span>
+      <span class="triage-sub" id="triageSub">0 pending requests</span>
+      <div class="kbd-hints">
+        <span><span class="kbd">A</span> approve</span>
+        <span><span class="kbd">R</span> reject</span>
+        <span><span class="kbd">↑↓</span> navigate</span>
+        <span><span class="kbd">Esc</span> close</span>
+      </div>
+      <button class="triage-close" onclick="closeTriage()">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- AI Analysis Banner -->
+    <div class="ai-banner">
+      <div class="ai-brain-icon">
+        <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M6 2C4.3 2 3 3.3 3 5c0 .5.1 1 .4 1.4C2.6 6.9 2 7.9 2 9c0 1.7 1.3 3 3 3h1v-2H5c-.6 0-1-.4-1-1 0-.4.2-.8.5-1l.5-.4-.3-.6C4.6 6.7 4.5 6.4 4.5 6c0-.8.7-1.5 1.5-1.5.3 0 .6.1.8.3L7 5v-.5C7 3.7 7.7 3 8.5 3S10 3.7 10 4.5V5l.2-.2c.2-.2.5-.3.8-.3.8 0 1.5.7 1.5 1.5 0 .4-.1.7-.3 1l-.3.6.5.4c.3.2.5.6.5 1 0 .6-.4 1-1 1h-1v2h1c1.7 0 3-1.3 3-3 0-1.1-.6-2.1-1.4-2.6C13.9 6 14 5.5 14 5c0-1.7-1.3-3-3-3-.6 0-1.2.2-1.7.5C8.9 2.2 8.5 2 8 2H6z" stroke="currentColor" stroke-width="1.1"/><path d="M7 12v2h2v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="ai-banner-body">
+        <div class="ai-banner-title">
+          AI Risk Analysis
+          <span class="ai-thinking" id="aiThinking">· analyzing...</span>
+        </div>
+        <div class="ai-chips" id="aiChips">
+          <!-- filled by JS -->
+        </div>
+      </div>
+      <div class="ai-banner-actions">
+        <button class="btn-ai-apply" onclick="applyAIRecommendations()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M2 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 4v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Apply AI Recommendations
+        </button>
+        <button class="btn-ai-reset" onclick="resetTriage()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8a5 5 0 1 1 .8 2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M3 12V8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="triage-filter-bar">
+      <div class="tri-search">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.4"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <input type="text" id="triageSearch" placeholder="Filter by device or requester..." oninput="triageFilter()"/>
+      </div>
+      <div class="tri-type-tabs" id="triTypeTabs"><!-- filled by JS --></div>
+      <button class="sort-btn" onclick="toggleSort()">
+        <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M2 4h12M4 7h8M6 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span id="sortLabel">Sort: Risk ↑</span>
+      </button>
+    </div>
+
+    <!-- Three-column triage body -->
+    <div class="triage-body">
+      <!-- Queue column -->
+      <div class="triage-col col-pending">
+        <div class="col-header">
+          <div class="col-header-icon">
+            <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </div>
+          <span class="col-title">Decision Queue</span>
+          <span class="col-count-badge" id="cntPending">0</span>
+        </div>
+        <div class="col-list" id="listPending"
+          ondragover="onDragOver(event,'pending')"
+          ondragleave="onDragLeave(event,'pending')"
+          ondrop="onDrop(event,'pending')">
+          <div class="drop-placeholder" id="phPending">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            All decisions made
+          </div>
+        </div>
+      </div>
+
+      <!-- Approve column -->
+      <div class="triage-col col-approve">
+        <div class="col-header">
+          <div class="col-header-icon">
+            <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="col-title">Approve</span>
+          <span class="col-count-badge" id="cntApprove">0</span>
+          <button class="col-clear" onclick="clearCol('approve')" title="Move all back to queue">Clear</button>
+        </div>
+        <div class="col-list" id="listApprove"
+          ondragover="onDragOver(event,'approve')"
+          ondragleave="onDragLeave(event,'approve')"
+          ondrop="onDrop(event,'approve')">
+          <div class="drop-placeholder" id="phApprove">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Drag cards here to approve
+          </div>
+        </div>
+      </div>
+
+      <!-- Reject column -->
+      <div class="triage-col col-reject">
+        <div class="col-header">
+          <div class="col-header-icon">
+            <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <span class="col-title">Reject</span>
+          <span class="col-count-badge" id="cntReject">0</span>
+          <button class="col-clear" onclick="clearCol('reject')" title="Move all back to queue">Clear</button>
+        </div>
+        <div class="col-list" id="listReject"
+          ondragover="onDragOver(event,'reject')"
+          ondragleave="onDragLeave(event,'reject')"
+          ondrop="onDrop(event,'reject')">
+          <div class="drop-placeholder" id="phReject">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Drag cards here to reject
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="triage-footer">
+      <div class="triage-stats">
+        <div class="stat-chip stat-chip-queue">
+          <div class="stat-dot stat-dot-queue"></div>
+          <span id="statQueue">0 in queue</span>
+        </div>
+        <div class="stat-chip stat-chip-approve">
+          <div class="stat-dot stat-dot-approve"></div>
+          <span id="statApprove">0 to approve</span>
+        </div>
+        <div class="stat-chip stat-chip-reject">
+          <div class="stat-dot stat-dot-reject"></div>
+          <span id="statReject">0 to reject</span>
+        </div>
+      </div>
+      <div class="triage-footer-actions">
+        <button class="btn-schedule" onclick="openSchedule()">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v2M11 2v2M2 7h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Schedule
+        </button>
+        <button class="btn-cancel-triage" onclick="closeTriage()">Cancel</button>
+        <button class="btn-confirm-triage" id="btnConfirmTriage" onclick="confirmTriage()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Confirm Decisions
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Modal -->
+<div class="schedule-modal" id="scheduleModal">
+  <div class="schedule-box">
+    <div class="sch-title">Schedule Bulk Action</div>
+    <div class="sch-sub">The decisions will be applied automatically at the scheduled time.</div>
+    <div class="sch-label">Date & Time</div>
+    <input type="datetime-local" class="sch-input" id="scheduleInput"/>
+    <div class="sch-label">Note (optional)</div>
+    <input type="text" class="sch-input" id="scheduleNote" placeholder="Reason for scheduling..."/>
+    <div class="sch-actions">
+      <button class="btn-sch-cancel" onclick="closeSchedule()">Cancel</button>
+      <button class="btn-sch-confirm" onclick="confirmSchedule()">Schedule Action</button>
+    </div>
+  </div>
+</div>
+
+<!-- Undo bar -->
+<div class="undo-bar" id="undoBar">
+  <div class="undo-bar-inner">
+    <div class="undo-dot"></div>
+    <span class="undo-msg" id="undoMsg">Decisions applied</span>
+    <button class="btn-undo" onclick="undoAction()">Undo</button>
+  </div>
+  <div class="undo-progress" id="undoProgress" style="width:100%"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-dot" id="toastDot"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+// ═══ DATA ══════════════════════════════════════════════════════
+const TYPES = ['Sync','Restore','Execute Runbook']
+const REQUESTERS = ['Kishan','Ronak','Admin','John','Sarah','Mehul','Priya','Dev']
+const APPROVERS = ['admin','bgp1.bgp1.com','—','site1.test.com','ospf3.ospf3.com']
+const DEVICES = [
+  'bgp1.bgp1.com','ospf3.ospf3.com','test.com','IOS Router',
+  '141.motadata.local','bgp2.bgp2.com','ospf1.ospf1.com','test2.com',
+  'IOS Router','cisco841.motadata.local','bgp3.bgp3.com','ospf4.ospf4.com',
+  'test3.com','IOS Router','145.motadata.local','bgp4.bgp4.com',
+  'ospf5.ospf5.com','test4.com','IOS Router','cisco842.mdata.local'
+]
+const reqColors = {
+  Kishan:'#14b8a6',Ronak:'#8c5bd8',Admin:'#008cff',
+  John:'#f47c22',Sarah:'#e05050',Mehul:'#2cc76a',Priya:'#f5c400',Dev:'#5272a0'
+}
+function genRows(n){
+  const rows=[]
+  for(let i=0;i<n;i++){
+    rows.push({
+      id:i+1,device:DEVICES[i%DEVICES.length],
+      approver:APPROVERS[i%APPROVERS.length],
+      status:i===0?'Approved':i===1?'Rejected':'Pending',
+      type:TYPES[i%3],requester:REQUESTERS[i%REQUESTERS.length],
+      date:`26-06-05 ${String(15+Math.floor(i/6)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')}:${String((i*13)%60).padStart(2,'0')}`,
+      selected:false,
+    })
+  }
+  return rows
+}
+const allRows = genRows(100)
+const pageRows = allRows.slice(0,20)
+
+// ═══ AI SCORING ════════════════════════════════════════════════
+// Simulated AI risk scoring based on operation type + device pattern
+function aiRisk(row){
+  if(row.type==='Execute Runbook') return 'high'
+  if(row.type==='Restore') return 'medium'
+  return 'low'
+}
+function aiRecommend(row, conflictDevices){
+  const risk = aiRisk(row)
+  if(risk==='high') return 'reject'   // flag high-risk for review
+  if(conflictDevices.has(row.device)) return 'pending'  // conflicts need manual review
+  if(risk==='medium'){
+    const trusted=['Admin','Kishan','Ronak']
+    return trusted.includes(row.requester) ? 'approve' : 'pending'
+  }
+  return 'approve'  // all low-risk → auto approve
+}
+function detectConflicts(rows){
+  const counts={}
+  rows.forEach(r=>{ counts[r.device]=(counts[r.device]||0)+1 })
+  return new Set(Object.keys(counts).filter(d=>counts[d]>1))
+}
+
+// ═══ TABLE ═════════════════════════════════════════════════════
+function renderTable(){
+  const tbody=document.getElementById('tableBody')
+  tbody.innerHTML=''
+  pageRows.forEach(row=>{
+    const tr=document.createElement('tr')
+    if(row.selected) tr.classList.add('selected')
+    const typeCls=row.type==='Sync'?'type-sync':row.type==='Restore'?'type-restore':'type-runbook'
+    const stsBadge=row.status==='Approved'?'badge-approved':row.status==='Rejected'?'badge-rejected':row.status==='Assigned'?'badge-assigned':'badge-pending'
+    tr.innerHTML=`
+      <td><div class="cb-wrap"><input type="checkbox" class="cb" ${row.selected?'checked':''} onchange="toggleRow(${row.id-1},this)"/></div></td>
+      <td style="font-size:11px;color:var(--muted)">${row.device}</td>
+      <td><div class="dev-icon"><svg viewBox="0 0 14 14" fill="none" width="10" height="10"><rect x="1" y="2" width="12" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 11v2M9 11v2M4 13h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div></td>
+      <td style="font-size:11px">${row.approver}</td>
+      <td><span class="badge ${stsBadge}">${row.status}</span></td>
+      <td><span class="type-pill ${typeCls}">${row.type}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${row.date}</td>
+      <td><button class="action-dots"><svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="4" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg></button></td>
+    `
+    tr.querySelector('input[type=checkbox]').addEventListener('click',e=>e.stopPropagation())
+    tr.addEventListener('click',()=>{ pageRows[row.id-1].selected=!pageRows[row.id-1].selected; renderTable() })
+    tbody.appendChild(tr)
+  })
+  updateHeaderCheckbox(); updateBulkBtn()
+}
+function toggleRow(idx,cb){ pageRows[idx].selected=cb.checked; renderTable() }
+function toggleAll(cb){ pageRows.forEach(r=>r.selected=cb.checked); renderTable() }
+function updateHeaderCheckbox(){
+  const sel=pageRows.filter(r=>r.selected).length
+  const cb=document.getElementById('selectAll')
+  cb.checked=sel===pageRows.length&&sel>0
+  if(sel>0&&sel<pageRows.length){cb.classList.add('indeterminate');cb.checked=false}
+  else cb.classList.remove('indeterminate')
+}
+function updateBulkBtn(){
+  const n=pageRows.filter(r=>r.selected).length
+  document.getElementById('bulkSplit').classList.toggle('active',n>0)
+  const cnt=document.getElementById('selCount')
+  cnt.classList.toggle('visible',n>0)
+  cnt.textContent=n+' selected'
+}
+
+// ═══ DROPDOWN ══════════════════════════════════════════════════
+function toggleDropdown(e){ e.stopPropagation(); document.getElementById('bulkDropdown').classList.toggle('open') }
+function closeDropdown(){ document.getElementById('bulkDropdown').classList.remove('open') }
+document.addEventListener('click',()=>closeDropdown())
+
+// ═══ TRIAGE STATE ══════════════════════════════════════════════
+let triageCards = []       // { row, lane:'pending'|'approve'|'reject' }
+let triageFilter_ = 'All'
+let sortMode = 'risk'
+let dragSrcId = null
+let focusedCardIdx = 0
+let undoSnapshot = null
+let undoTimer = null
+
+function getPendingRows(){ return pageRows.filter(r=>r.selected&&r.status==='Pending') }
+
+function openTriage(){
+  const pending = getPendingRows()
+  if(!pending.length){
+    if(pageRows.filter(r=>r.selected).length) showToast('var(--orange)','No pending requests in selection')
+    return
+  }
+  // Initialize triage state — all in queue
+  triageCards = pending.map(r=>({ row:r, lane:'pending' }))
+  triageFilter_ = 'All'
+  sortMode = 'risk'
+  document.getElementById('triageSub').textContent = pending.length+' pending requests'
+  document.getElementById('triageOverlay').classList.add('open')
+  document.body.style.overflow='hidden'
+  document.getElementById('triageSearch').value=''
+  // Show AI analysis with simulated thinking delay
+  document.getElementById('aiThinking').classList.add('active')
+  buildTriageTypeTabs()
+  renderTriageColumns()
+  updateTriageFooter()
+  setTimeout(()=>{
+    document.getElementById('aiThinking').classList.remove('active')
+    buildAIChips()
+  }, 800)
+  // Focus keyboard on first card
+  focusedCardIdx = 0
+}
+
+function closeTriage(){
+  document.getElementById('triageOverlay').classList.remove('open')
+  document.body.style.overflow=''
+}
+
+// ─── AI Chips ───────────────────────────────────────────────────
+function buildAIChips(){
+  const conflicts = detectConflicts(triageCards.map(c=>c.row))
+  const pending = triageCards.map(c=>c.row)
+  const low = pending.filter(r=>aiRisk(r)==='low').length
+  const med = pending.filter(r=>aiRisk(r)==='medium').length
+  const high = pending.filter(r=>aiRisk(r)==='high').length
+  const conf = pending.filter(r=>conflicts.has(r.device)).length
+  const chips = document.getElementById('aiChips')
+  chips.innerHTML = ''
+  if(low) chips.innerHTML += `<span class="ai-chip chip-low" onclick="filterByRisk('low')">● ${low} Low Risk — auto-approve eligible</span>`
+  if(med) chips.innerHTML += `<span class="ai-chip chip-med" onclick="filterByRisk('medium')">● ${med} Medium Risk — review</span>`
+  if(high) chips.innerHTML += `<span class="ai-chip chip-high" onclick="filterByRisk('high')">● ${high} High Risk — flag for rejection</span>`
+  if(conf) chips.innerHTML += `<span class="ai-chip chip-conflict" onclick="filterByRisk('conflict')">⚠ ${conf} Device Conflicts</span>`
+}
+
+function filterByRisk(riskType){
+  // Highlight cards of this risk type in the queue
+  document.querySelectorAll('.triage-card').forEach(el=>{
+    const risk = el.dataset.risk
+    const isConflict = el.dataset.conflict==='1'
+    const match = riskType==='conflict' ? isConflict : risk===riskType
+    el.style.opacity = match ? '1' : '0.35'
+  })
+  setTimeout(()=>{
+    document.querySelectorAll('.triage-card').forEach(el=>el.style.opacity='')
+  }, 2000)
+}
+
+// ─── Apply AI Recommendations ───────────────────────────────────
+function applyAIRecommendations(){
+  const conflicts = detectConflicts(triageCards.map(c=>c.row))
+  triageCards.forEach(c=>{
+    c.lane = aiRecommend(c.row, conflicts)
+  })
+  renderTriageColumns()
+  updateTriageFooter()
+  showToast('var(--ai)', 'AI recommendations applied — review and confirm')
+}
+
+function resetTriage(){
+  triageCards.forEach(c=>c.lane='pending')
+  renderTriageColumns(); updateTriageFooter()
+  showToast('var(--muted)','Reset to decision queue')
+}
+
+// ─── Type tabs inside triage ────────────────────────────────────
+function buildTriageTypeTabs(){
+  const tabs=['All',...TYPES]
+  const bar=document.getElementById('triTypeTabs')
+  bar.innerHTML=''
+  tabs.forEach(t=>{
+    const count=t==='All'?triageCards.length:triageCards.filter(c=>c.row.type===t).length
+    const div=document.createElement('div')
+    div.className='tri-tab'+(t===triageFilter_?' active':'')
+    div.innerHTML=`${t} <span class="tri-tab-count">${count}</span>`
+    div.onclick=()=>{ triageFilter_=t; buildTriageTypeTabs(); renderTriageColumns() }
+    bar.appendChild(div)
+  })
+}
+
+// ─── Filter + Sort helpers ─────────────────────────────────────
+function triageFilter(){ renderTriageColumns() }
+function toggleSort(){
+  sortMode = sortMode==='risk'?'requester':'risk'
+  document.getElementById('sortLabel').textContent = sortMode==='risk'?'Sort: Risk ↑':'Sort: Requester'
+  renderTriageColumns()
+}
+function getVisibleCards(lane){
+  const sv = document.getElementById('triageSearch').value.toLowerCase()
+  let cards = triageCards.filter(c=>c.lane===lane)
+  if(triageFilter_!=='All') cards=cards.filter(c=>c.row.type===triageFilter_)
+  if(sv) cards=cards.filter(c=>c.row.device.toLowerCase().includes(sv)||c.row.requester.toLowerCase().includes(sv))
+  if(sortMode==='risk'){
+    const order={'high':0,'medium':1,'low':2}
+    cards.sort((a,b)=>(order[aiRisk(a.row)]||3)-(order[aiRisk(b.row)]||3))
+  } else {
+    cards.sort((a,b)=>a.row.requester.localeCompare(b.row.requester))
+  }
+  return cards
+}
+
+// ─── Render columns ─────────────────────────────────────────────
+function renderTriageColumns(){
+  renderCol('pending'); renderCol('approve'); renderCol('reject')
+  updateTriageFooter()
+  buildTriageTypeTabs()
+}
+function renderCol(lane){
+  const list = document.getElementById('list'+cap(lane))
+  const ph = document.getElementById('ph'+cap(lane))
+  const cards = getVisibleCards(lane)
+  const conflicts = detectConflicts(triageCards.map(c=>c.row))
+  // Remove old cards, keep placeholder
+  Array.from(list.children).forEach(el=>{ if(el.classList.contains('triage-card')) el.remove() })
+  if(!cards.length){ ph.style.display=''; return }
+  ph.style.display='none'
+  cards.forEach((c,i)=>{
+    const isConflict = conflicts.has(c.row.device)
+    const risk = aiRisk(c.row)
+    const color = reqColors[c.row.requester]||'#5272a0'
+    const initials = c.row.requester[0]
+    const typeCls = c.row.type==='Sync'?'type-sync':c.row.type==='Restore'?'type-restore':'type-runbook'
+    const div = document.createElement('div')
+    div.className = 'triage-card'+(isConflict?' is-conflict':'')
+    div.draggable = true
+    div.dataset.id = c.row.id
+    div.dataset.risk = risk
+    div.dataset.conflict = isConflict?'1':'0'
+    div.tabIndex = 0
+    // Build card HTML
+    const riskHtml = `<span class="risk-badge risk-${risk}">${risk}</span>`
+    const conflictHtml = isConflict?`<span class="conflict-badge"><svg viewBox="0 0 16 16" fill="none" width="8" height="8"><path d="M8 3v6M8 11v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> conflict</span>`:''
+    // Action buttons depend on lane
+    let btns = ''
+    if(lane==='pending'){
+      btns = `
+        <button class="card-btn card-btn-approve" title="Approve (A)" onclick="moveCard(${c.row.id},'approve',event)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="card-btn card-btn-reject" title="Reject (R)" onclick="moveCard(${c.row.id},'reject',event)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>`
+    } else {
+      btns = `
+        <button class="card-btn card-btn-back" title="Return to queue" onclick="moveCard(${c.row.id},'pending',event)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L6 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>`
+    }
+    div.innerHTML = `
+      <div class="card-top">
+        ${riskHtml}${conflictHtml}
+        <span class="type-pill ${typeCls} card-type" style="font-size:9px;padding:1px 6px">${c.row.type}</span>
+        <div class="card-actions">${btns}</div>
+      </div>
+      <div class="card-device">${c.row.device}</div>
+      <div class="card-meta">
+        <div class="req-dot" style="background:${color}">${initials}</div>
+        <span class="card-requester" style="color:${color}">${c.row.requester}</span>
+        <span>·</span><span>${c.row.date}</span>
+      </div>
+      <div class="card-approver-row">
+        <span class="card-approver-label">Approver</span>
+        <span class="card-approver-val">${c.row.approver}</span>
+      </div>
+      ${lane==='reject'?`<div class="card-note-wrap"><textarea class="card-note" placeholder="Rejection reason (optional)..." data-id="${c.row.id}"></textarea></div>`:''}
+    `
+    div.addEventListener('dragstart',e=>onDragStart(e,c.row.id))
+    div.addEventListener('dragend',onDragEnd)
+    div.addEventListener('focus',()=>{
+      document.querySelectorAll('.triage-card.kbd-focus').forEach(el=>el.classList.remove('kbd-focus'))
+      div.classList.add('kbd-focus')
+    })
+    list.appendChild(div)
+  })
+  document.getElementById('cnt'+cap(lane)).textContent = triageCards.filter(c=>c.lane===lane).length
+}
+
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1) }
+
+// ─── Move card ──────────────────────────────────────────────────
+function moveCard(rowId, targetLane, e){
+  if(e) e.stopPropagation()
+  const card = triageCards.find(c=>c.row.id===rowId)
+  if(card) card.lane = targetLane
+  renderTriageColumns()
+}
+
+// ─── Clear column ───────────────────────────────────────────────
+function clearCol(lane){
+  triageCards.filter(c=>c.lane===lane).forEach(c=>c.lane='pending')
+  renderTriageColumns()
+}
+
+// ─── Drag & Drop ────────────────────────────────────────────────
+function onDragStart(e, rowId){
+  dragSrcId = rowId
+  e.dataTransfer.effectAllowed='move'
+  setTimeout(()=>{
+    const el=document.querySelector(`.triage-card[data-id="${rowId}"]`)
+    if(el) el.classList.add('dragging')
+  },0)
+}
+function onDragEnd(){
+  dragSrcId = null
+  document.querySelectorAll('.triage-card.dragging').forEach(el=>el.classList.remove('dragging'))
+  document.querySelectorAll('.col-list').forEach(el=>{
+    el.classList.remove('drag-over-approve','drag-over-reject','drag-over-pending')
+  })
+}
+function onDragOver(e, lane){
+  e.preventDefault()
+  e.dataTransfer.dropEffect='move'
+  const list=document.getElementById('list'+cap(lane))
+  list.classList.remove('drag-over-approve','drag-over-reject','drag-over-pending')
+  list.classList.add('drag-over-'+lane)
+}
+function onDragLeave(e, lane){
+  document.getElementById('list'+cap(lane)).classList.remove('drag-over-approve','drag-over-reject','drag-over-pending')
+}
+function onDrop(e, lane){
+  e.preventDefault()
+  onDragLeave(e, lane)
+  if(dragSrcId!==null) moveCard(dragSrcId, lane, null)
+}
+
+// ─── Keyboard navigation ─────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('triageOverlay').classList.contains('open')) return
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return
+  const focused = document.querySelector('.triage-card.kbd-focus')
+  if(e.key==='Escape'){ closeTriage(); return }
+  if(e.key==='a'||e.key==='A'){
+    if(focused) moveCard(parseInt(focused.dataset.id),'approve',null)
+    return
+  }
+  if(e.key==='r'||e.key==='R'){
+    if(focused) moveCard(parseInt(focused.dataset.id),'reject',null)
+    return
+  }
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    const cards=Array.from(document.querySelectorAll('.triage-card'))
+    if(!cards.length) return
+    const idx=focused?cards.indexOf(focused):0
+    const next=e.key==='ArrowDown'?Math.min(idx+1,cards.length-1):Math.max(idx-1,0)
+    cards[next].focus()
+    e.preventDefault()
+  }
+})
+
+// ─── Footer + Confirm ────────────────────────────────────────────
+function updateTriageFooter(){
+  const q=triageCards.filter(c=>c.lane==='pending').length
+  const a=triageCards.filter(c=>c.lane==='approve').length
+  const r=triageCards.filter(c=>c.lane==='reject').length
+  document.getElementById('statQueue').textContent=q+' in queue'
+  document.getElementById('statApprove').textContent=a+' to approve'
+  document.getElementById('statReject').textContent=r+' to reject'
+  document.getElementById('btnConfirmTriage').classList.toggle('active', a+r>0)
+}
+
+function confirmTriage(){
+  const toApprove = triageCards.filter(c=>c.lane==='approve')
+  const toReject = triageCards.filter(c=>c.lane==='reject')
+  if(!toApprove.length&&!toReject.length) return
+  // Save snapshot for undo
+  undoSnapshot = triageCards.map(c=>({ row:c.row, prevStatus:c.row.status, prevApprover:c.row.approver }))
+  // Apply decisions
+  toApprove.forEach(c=>{ c.row.status='Approved'; c.row.selected=false })
+  toReject.forEach(c=>{ c.row.status='Rejected'; c.row.selected=false })
+  renderTable()
+  closeTriage()
+  // Show undo bar
+  showUndoBar(toApprove.length, toReject.length)
+}
+
+// ─── Undo ────────────────────────────────────────────────────────
+function showUndoBar(approved, rejected){
+  const bar=document.getElementById('undoBar')
+  document.getElementById('undoMsg').innerHTML=`<strong>${approved} approved</strong> and <strong>${rejected} rejected</strong> — can undo for 6s`
+  bar.classList.add('show')
+  const prog=document.getElementById('undoProgress')
+  prog.style.transition='none'
+  prog.style.transform='scaleX(1)'
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      prog.style.transition='transform 6s linear'
+      prog.style.transform='scaleX(0)'
+    })
+  })
+  if(undoTimer) clearTimeout(undoTimer)
+  undoTimer=setTimeout(()=>{ bar.classList.remove('show'); undoSnapshot=null }, 6000)
+}
+function undoAction(){
+  if(!undoSnapshot) return
+  undoSnapshot.forEach(s=>{ s.row.status=s.prevStatus; s.row.approver=s.prevApprover })
+  undoSnapshot=null
+  if(undoTimer){ clearTimeout(undoTimer); undoTimer=null }
+  document.getElementById('undoBar').classList.remove('show')
+  renderTable()
+  showToast('var(--orange)','Decisions undone — back to previous state')
+}
+
+// ─── Schedule ────────────────────────────────────────────────────
+function openSchedule(){
+  const a=triageCards.filter(c=>c.lane==='approve').length
+  const r=triageCards.filter(c=>c.lane==='reject').length
+  if(a+r===0){ showToast('var(--orange)','Make decisions first before scheduling'); return }
+  document.getElementById('scheduleModal').classList.add('open')
+}
+function closeSchedule(){ document.getElementById('scheduleModal').classList.remove('open') }
+function confirmSchedule(){
+  const dt=document.getElementById('scheduleInput').value
+  if(!dt){ document.getElementById('scheduleInput').style.borderColor='var(--red)'; setTimeout(()=>document.getElementById('scheduleInput').style.borderColor='',1500); return }
+  closeSchedule(); closeTriage()
+  const a=triageCards.filter(c=>c.lane==='approve').length
+  const r=triageCards.filter(c=>c.lane==='reject').length
+  const d=new Date(dt); const fmt=d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  showToast('var(--blue)',`Scheduled: ${a} approve + ${r} reject on ${fmt}`)
+}
+
+// ─── Toast ────────────────────────────────────────────────────────
+function showToast(color,msg){
+  const t=document.getElementById('toast')
+  document.getElementById('toastDot').style.background=color
+  document.getElementById('toastMsg').textContent=msg
+  t.classList.add('show')
+  setTimeout(()=>t.classList.remove('show'),3500)
+}
+
+// Init
+renderTable()
+</script>
+</body>
+</html>
